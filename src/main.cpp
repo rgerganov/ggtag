@@ -6,11 +6,17 @@
 #include "pico/pdm_microphone.h"
 #include "tusb.h"
 
-const int sampleRate = 16000;
-const int bufsize = 128;
-const int samplesPerFrame = 128;
+const int sampleRate = 24000;
+const int bufsize = 528;
+const int samplesPerFrame = 512;
 
-int16_t sampleBuffer[bufsize];
+// this seems to be too much for real-time processing
+//const int sampleRate = 48000;
+//const int bufsize = 1056;
+//const int samplesPerFrame = 1024;
+
+int16_t sampleBufferCur[bufsize];        // we read new samples in this buffer
+int16_t sampleBuffer[3*samplesPerFrame]; // after that, we queue them in this bigger buffer
 volatile int samplesRead = 0;
 GGWave ggwave;
 GGWave::TxRxData result;
@@ -18,10 +24,10 @@ GGWave::TxRxData result;
 // microphone configuration
 const struct pdm_microphone_config config = {
     // GPIO pin for the PDM DAT signal
-    .gpio_data = 0,
+    .gpio_data = 22,
 
     // GPIO pin for the PDM CLK signal
-    .gpio_clk = 1,
+    .gpio_clk = 23,
 
     // PIO instance to use
     .pio = pio0,
@@ -40,7 +46,7 @@ void on_pdm_samples_ready()
 {
     // callback from library when all the samples in the library
     // internal sample buffer are ready for reading
-    samplesRead = pdm_microphone_read(sampleBuffer, bufsize);
+    samplesRead = pdm_microphone_read(sampleBufferCur, bufsize);
 }
 
 int main(void)
@@ -65,11 +71,11 @@ int main(void)
 
     GGWave::Protocols::tx().disableAll();
     GGWave::Protocols::rx().disableAll();
-    GGWave::Protocols::rx().toggle(GGWAVE_PROTOCOL_MT_NORMAL, true);
-    GGWave::Protocols::rx().toggle(GGWAVE_PROTOCOL_MT_FAST, true);
+    //GGWave::Protocols::rx().toggle(GGWAVE_PROTOCOL_MT_NORMAL, true);
+    //GGWave::Protocols::rx().toggle(GGWAVE_PROTOCOL_MT_FAST, true);
     GGWave::Protocols::rx().toggle(GGWAVE_PROTOCOL_MT_FASTEST, true);
-    GGWave::Protocols::rx().toggle(GGWAVE_PROTOCOL_DT_NORMAL, true);
-    GGWave::Protocols::rx().toggle(GGWAVE_PROTOCOL_DT_FAST, true);
+    //GGWave::Protocols::rx().toggle(GGWAVE_PROTOCOL_DT_NORMAL, true);
+    //GGWave::Protocols::rx().toggle(GGWAVE_PROTOCOL_DT_FAST, true);
     GGWave::Protocols::rx().toggle(GGWAVE_PROTOCOL_DT_FASTEST, true);
     // Print the memory required for the "ggwave" instance:
     ggwave.prepare(p, false);
@@ -97,30 +103,43 @@ int main(void)
     }
     int niter = 0;
     uint32_t totalSamples = 0;
+
+    int sampleCount = 0; // the number of samples we have in the sampleBuffer
     while (1) {
         // wait for new samples
         while (samplesRead == 0) { tight_loop_contents(); }
         // store and clear the samples read from the callback
-        int sampleCount = samplesRead;
+        for (int i = 0; i < samplesRead; i++) {
+            sampleBuffer[sampleCount + i] = sampleBufferCur[i];
+        }
+        sampleCount += samplesRead;
         samplesRead = 0;
 
-        auto tStart = to_ms_since_boot(get_absolute_time());
-        //printf("trying to decode...\n");
-        ggwave.decode(sampleBuffer, sampleCount*sizeof(int16_t));
-        auto tEnd = to_ms_since_boot(get_absolute_time());
-        if (++niter % 10 == 0) {
-            //printf("time: %d\n", tEnd - tStart);
-            // Check if decode() is taking too long
-            if (tEnd - tStart > 1000*(float(sampleCount)/sampleRate)) {
-                printf("Warning: decode() took too long to execute!\n");
+        while (sampleCount >= samplesPerFrame) {
+            auto tStart = to_ms_since_boot(get_absolute_time());
+            //printf("trying to decode... sampleCount = %d\n", sampleCount);
+            ggwave.decode(sampleBuffer, samplesPerFrame*sizeof(int16_t));
+            auto tEnd = to_ms_since_boot(get_absolute_time());
+            if (++niter % 10 == 0) {
+                //printf("time: %d\n", tEnd - tStart);
+                // Check if decode() is taking too long
+                if (tEnd - tStart > 1000*(float(samplesPerFrame)/sampleRate)) {
+                    printf("Warning: decode() took too long to execute!\n");
+                }
             }
-        }
 
-        // Check if we have successfully decoded any data:
-        int nr = ggwave.rxTakeData(result);
-        if (nr > 0) {
-            printf("Received data with length %d bytes\n", nr); // should be equal to p.payloadLength
-            printf("%s\n", result.data());
+            // Check if we have successfully decoded any data:
+            int nr = ggwave.rxTakeData(result);
+            if (nr > 0) {
+                printf("Received data with length %d bytes\n", nr); // should be equal to p.payloadLength
+                printf("%s\n", result.data());
+            }
+
+            // move samples to the front of the buffer
+            for (int i = samplesPerFrame; i < sampleCount; i++) {
+                sampleBuffer[i - samplesPerFrame] = sampleBuffer[i];
+            }
+            sampleCount -= samplesPerFrame;
         }
     }
     return 0;
