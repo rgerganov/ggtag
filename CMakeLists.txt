@@ -8,7 +8,7 @@ cmake_minimum_required(VERSION 3.12)
 # note: this must happen before project()
 include(pico_sdk_import.cmake)
 
-project(pico_microphone)
+project(ggtag)
 
 # initialize the Pico SDK
 pico_sdk_init()
@@ -43,7 +43,22 @@ add_executable(ggtag
     ${CMAKE_CURRENT_LIST_DIR}/src/main.cpp
 )
 
-target_link_libraries(ggtag pico_pdm_microphone ggwave)
+add_library(epd INTERFACE)
+target_sources(epd INTERFACE
+    ${CMAKE_CURRENT_LIST_DIR}/src/epd/DEV_Config.c
+    ${CMAKE_CURRENT_LIST_DIR}/src/epd/EPD_2in13_V3.c
+    ${CMAKE_CURRENT_LIST_DIR}/src/epd/GUI_Paint.c
+    ${CMAKE_CURRENT_LIST_DIR}/src/epd/font8.c
+    ${CMAKE_CURRENT_LIST_DIR}/src/epd/font12.c
+    ${CMAKE_CURRENT_LIST_DIR}/src/epd/font16.c
+    ${CMAKE_CURRENT_LIST_DIR}/src/epd/font20.c
+    ${CMAKE_CURRENT_LIST_DIR}/src/epd/font24.c
+)
+target_include_directories(epd INTERFACE
+    ${CMAKE_CURRENT_LIST_DIR}/src/epd
+)
+
+target_link_libraries(ggtag PUBLIC pico_pdm_microphone ggwave epd hardware_spi)
 
 # enable usb output, disable uart output
 pico_enable_stdio_usb(ggtag 1)

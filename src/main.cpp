@@ -1,10 +1,14 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "ggwave/ggwave.h"
 #include "pico/stdlib.h"
 #include "pico/pdm_microphone.h"
 #include "tusb.h"
+#include "DEV_Config.h"
+#include "EPD_2in13_V3.h"
+#include "GUI_Paint.h"
 
 const int sampleRate = 24000;
 const int bufsize = 528;
@@ -24,10 +28,10 @@ GGWave::TxRxData result;
 // microphone configuration
 const struct pdm_microphone_config config = {
     // GPIO pin for the PDM DAT signal
-    .gpio_data = 22,
+    .gpio_data = 0,
 
     // GPIO pin for the PDM CLK signal
-    .gpio_clk = 23,
+    .gpio_clk = 1,
 
     // PIO instance to use
     .pio = pio0,
@@ -53,14 +57,39 @@ int main(void)
 {
     // initialize stdio and wait for USB CDC connect
     stdio_init_all();
-    while (!tud_cdc_connected()) {
-        tight_loop_contents();
+    // while (!tud_cdc_connected()) {
+    //     tight_loop_contents();
+    // }
+
+    printf("EPD module init\n");
+    if(DEV_Module_Init() != 0) {
+        printf("EPD module init failed\n");
+        while (1) { tight_loop_contents(); }
     }
+    printf("e-Paper Init and Clear...\n");
+    EPD_2in13_V3_Init();
+    EPD_2in13_V3_Clear();
+
+    //Create a new image cache
+    UBYTE *img;
+    UWORD imgSize = ((EPD_2in13_V3_WIDTH % 8 == 0)? (EPD_2in13_V3_WIDTH / 8 ): (EPD_2in13_V3_WIDTH / 8 + 1)) * EPD_2in13_V3_HEIGHT;
+    if((img = (UBYTE *)malloc(imgSize)) == NULL) {
+        printf("Failed to allocate memory\n");
+        while (1) { tight_loop_contents(); }
+    }
+
+    Paint_NewImage(img, EPD_2in13_V3_WIDTH, EPD_2in13_V3_HEIGHT, 90, WHITE);
+    printf("Drawing\n");
+    Paint_SelectImage(img);
+    Paint_Clear(WHITE);
+    Paint_DrawString_EN(15, 15, "Hello, this is ggtag!", &Font16, WHITE, BLACK);
+    EPD_2in13_V3_Display_Base(img);
+    DEV_Delay_ms(1000);
 
     printf("Hello, this is ggtag!\n");
     ggwave.setLogFile(nullptr);
     auto p = GGWave::getDefaultParameters();
-    p.payloadLength   = 8;
+    p.payloadLength   = 16;
     p.sampleRateInp   = sampleRate;
     p.sampleRateOut   = sampleRate;
     p.sampleRate      = sampleRate;
@@ -71,6 +100,7 @@ int main(void)
 
     GGWave::Protocols::tx().disableAll();
     GGWave::Protocols::rx().disableAll();
+    GGWave::Protocols::rx().toggle(GGWAVE_PROTOCOL_AUDIBLE_FASTEST, true);
     //GGWave::Protocols::rx().toggle(GGWAVE_PROTOCOL_MT_NORMAL, true);
     //GGWave::Protocols::rx().toggle(GGWAVE_PROTOCOL_MT_FAST, true);
     GGWave::Protocols::rx().toggle(GGWAVE_PROTOCOL_MT_FASTEST, true);
@@ -103,6 +133,7 @@ int main(void)
     }
     int niter = 0;
     uint32_t totalSamples = 0;
+    uint8_t lastData[32];
 
     int sampleCount = 0; // the number of samples we have in the sampleBuffer
     while (1) {
@@ -131,8 +162,15 @@ int main(void)
             // Check if we have successfully decoded any data:
             int nr = ggwave.rxTakeData(result);
             if (nr > 0) {
-                printf("Received data with length %d bytes\n", nr); // should be equal to p.payloadLength
-                printf("%s\n", result.data());
+                if (memcmp(result.data(), lastData, nr) != 0) {
+                    printf("Received data with length %d bytes\n", nr); // should be equal to p.payloadLength
+                    printf("%s\n", result.data());
+                    Paint_SelectImage(img);
+                    Paint_Clear(WHITE);
+                    Paint_DrawString_EN(15, 15, (const char*) result.data(), &Font16, WHITE, BLACK);
+                    EPD_2in13_V3_Display_Base(img);
+                    memcpy(lastData, result.data(), nr);
+                }
             }
 
             // move samples to the front of the buffer
