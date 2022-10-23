@@ -6,7 +6,14 @@ cd pico-sdk
 git submodule init
 git submodule update
 cd ..
+git clone https://github.com/raspberrypi/pico-extras
+cd pico-extra
+git submodule init
+git submodule update
+cd ..
 export PICO_SDK_PATH=<full_path_to_pico_sdk>
+export PICO_EXTRAS_PATH=<full_path_to_pico_extras>
+
 git clone git@github.com:rgerganov/ggtag
 cd ggtag
 git submodule init

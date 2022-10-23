@@ -7,6 +7,7 @@ cmake_minimum_required(VERSION 3.12)
 # pico_sdk_import.cmake is a single file copied from this SDK
 # note: this must happen before project()
 include(pico_sdk_import.cmake)
+include(pico_extras_import.cmake)
 
 project(ggtag)
 
@@ -58,7 +59,7 @@ target_include_directories(epd INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/src/epd
 )
 
-target_link_libraries(ggtag PUBLIC pico_pdm_microphone ggwave epd hardware_spi)
+target_link_libraries(ggtag PUBLIC pico_pdm_microphone ggwave epd hardware_spi hardware_sleep)
 
 # enable usb output, disable uart output
 pico_enable_stdio_usb(ggtag 1)

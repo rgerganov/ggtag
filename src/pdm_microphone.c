@@ -164,8 +164,6 @@ void pdm_microphone_stop() {
         false
     );
 
-    dma_channel_abort(pdm_mic.dma_channel);
-
     if (pdm_mic.dma_irq == DMA_IRQ_0) {
         dma_channel_set_irq0_enabled(pdm_mic.dma_channel, false);
     } else if (pdm_mic.dma_irq == DMA_IRQ_1) {
@@ -173,6 +171,8 @@ void pdm_microphone_stop() {
     }
 
     irq_set_enabled(pdm_mic.dma_irq, false);
+
+    dma_channel_abort(pdm_mic.dma_channel);
 }
 
 static void pdm_dma_handler() {
