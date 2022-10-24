@@ -4,7 +4,7 @@
 
 #include "ggwave/ggwave.h"
 
-#include "tusb.h"
+//#include "tusb.h"
 #include "DEV_Config.h"
 #include "EPD_2in13_V3.h"
 #include "GUI_Paint.h"
@@ -13,11 +13,14 @@
 #include "pico/sleep.h"
 #include "pico/pdm_microphone.h"
 
+#include "hardware/clocks.h"
 #include "hardware/gpio.h"
-#include "hardware/sync.h"
+#include "hardware/rosc.h"
 #include "hardware/rtc.h"
+#include "hardware/sync.h"
 #include "hardware/structs/ioqspi.h"
 #include "hardware/structs/sio.h"
+#include "hardware/structs/scb.h"
 
 #define LED_PIN 25
 #define WAKE_PIN 15
@@ -101,43 +104,114 @@ void on_pdm_samples_ready() {
     samplesRead = pdm_microphone_read(sampleBufferCur, BUF_SIZE);
 }
 
-void sleep_callback(void) {
-    uart_default_tx_wait_blocking();
+//
+// E-ink display helpers
+//
+
+void eink_print_text(const char * text, UBYTE *img, bool partial) {
+    Paint_SelectImage(img);
+    if (!partial) {
+        Paint_Clear(WHITE);
+        Paint_DrawString_EN(15, 15, text, &Font16, WHITE, BLACK);
+        EPD_2in13_V3_Display(img);
+    } else {
+        Paint_Clear(WHITE);
+        Paint_DrawString_EN(15, 31, text, &Font16, WHITE, BLACK);
+        EPD_2in13_V3_Display(img);
+        //EPD_2in13_V3_Display_Partial(img);
+    }
 }
 
-void rtc_sleep(void) {
-    // Sleep attempt 1 - sleep for 1 second
-    //{
-    //    datetime_t t = {
-    //        .year  = 2020,
-    //        .month = 06,
-    //        .day   = 05,
-    //        .dotw  = 5,
-    //        .hour  = 15,
-    //        .min   = 45,
-    //        .sec   = 00
-    //    };
+//
+// deep sleep functionality
+// ref: https://github.com/ghubcoder/PicoSleepDemo
+//
 
-    //    // 1 second later
-    //    datetime_t t2 = {
-    //        .year  = 2020,
-    //        .month = 06,
-    //        .day   = 05,
-    //        .dotw  = 5,
-    //        .hour  = 15,
-    //        .min   = 45,
-    //        .sec   = 01
-    //    };
+void recover_from_sleep(uint scb_orig, uint clock0_orig, uint clock1_orig){
+    //Re-enable ring Oscillator control
+    rosc_write(&rosc_hw->ctrl, ROSC_CTRL_ENABLE_BITS);
 
-    //    // set the RTC to the current time
-    //    rtc_set_datetime(&t);
+    //reset procs back to default
+    scb_hw->scr = scb_orig;
+    clocks_hw->sleep_en0 = clock0_orig;
+    clocks_hw->sleep_en1 = clock1_orig;
 
-    //    uart_default_tx_wait_blocking();
-    //    sleep_goto_sleep_until(&t2, &sleep_callback);
-    //}
+    //reset clocks
+    clocks_init();
+    stdio_init_all();
 
-    // Sleep attempt 2 - wait for button press on GPIO pin
-    sleep_goto_dormant_until_edge_high(WAKE_PIN);
+    return;
+}
+
+void measure_freqs(void) {
+    uint f_pll_sys = frequency_count_khz(CLOCKS_FC0_SRC_VALUE_PLL_SYS_CLKSRC_PRIMARY);
+    uint f_pll_usb = frequency_count_khz(CLOCKS_FC0_SRC_VALUE_PLL_USB_CLKSRC_PRIMARY);
+    uint f_rosc = frequency_count_khz(CLOCKS_FC0_SRC_VALUE_ROSC_CLKSRC);
+    uint f_clk_sys = frequency_count_khz(CLOCKS_FC0_SRC_VALUE_CLK_SYS);
+    uint f_clk_peri = frequency_count_khz(CLOCKS_FC0_SRC_VALUE_CLK_PERI);
+    uint f_clk_usb = frequency_count_khz(CLOCKS_FC0_SRC_VALUE_CLK_USB);
+    uint f_clk_adc = frequency_count_khz(CLOCKS_FC0_SRC_VALUE_CLK_ADC);
+    uint f_clk_rtc = frequency_count_khz(CLOCKS_FC0_SRC_VALUE_CLK_RTC);
+
+    printf("pll_sys  = %dkHz\n", f_pll_sys);
+    printf("pll_usb  = %dkHz\n", f_pll_usb);
+    printf("rosc     = %dkHz\n", f_rosc);
+    printf("clk_sys  = %dkHz\n", f_clk_sys);
+    printf("clk_peri = %dkHz\n", f_clk_peri);
+    printf("clk_usb  = %dkHz\n", f_clk_usb);
+    printf("clk_adc  = %dkHz\n", f_clk_adc);
+    printf("clk_rtc  = %dkHz\n", f_clk_rtc);
+
+    uart_default_tx_wait_blocking();
+    // Can't measure clk_ref / xosc as it is the ref
+}
+
+static void sleep_callback(void) {
+    uart_default_tx_wait_blocking();
+    return;
+}
+
+static void rtc_sleep(int8_t minute_to_sleep_to, int8_t second_to_sleep_to) {
+    static uint scb_orig = scb_hw->scr;
+    static uint clock0_orig = clocks_hw->sleep_en0;
+    static uint clock1_orig = clocks_hw->sleep_en1;
+
+    datetime_t t = {
+            .year  = 2010,
+            .month = 06,
+            .day   = 05,
+            .dotw  = 5, // 0 is Sunday, so 5 is Friday
+            .hour  = 15,
+            .min   = 45,
+            .sec   = 00
+    };
+
+    uart_default_tx_wait_blocking();
+    sleep_run_from_rosc();
+
+    rtc_set_datetime(&t);
+
+    datetime_t t_alarm = {
+            .year  = 2010,
+            .month = 06,
+            .day   = 05,
+            .dotw  = 5, // 0 is Sunday, so 5 is Friday
+            .hour  = 15,
+            .min   = minute_to_sleep_to,
+            .sec   = second_to_sleep_to
+    };
+
+    uart_default_tx_wait_blocking();
+
+    sleep_goto_sleep_until(&t_alarm, &sleep_callback);
+
+    uart_default_tx_wait_blocking();
+
+    //reset processor and clocks back to defaults
+    recover_from_sleep(scb_orig, clock0_orig, clock1_orig);
+
+    //clocks should be restored
+    measure_freqs();
 }
 
 int main(void) {
@@ -146,6 +220,11 @@ int main(void) {
     // while (!tud_cdc_connected()) {
     //     tight_loop_contents();
     // }
+
+    gpio_init(LED_PIN) ;
+    gpio_set_dir(LED_PIN, GPIO_OUT);
+    gpio_set_dir(WAKE_PIN, GPIO_IN);
+    gpio_put(LED_PIN,1);
 
     // initialize the e-ink display
     UBYTE *img;
@@ -166,19 +245,11 @@ int main(void) {
             while (1) { tight_loop_contents(); }
         }
 
-        Paint_NewImage(img, EPD_2in13_V3_WIDTH, EPD_2in13_V3_HEIGHT, 90, WHITE);
         printf("Drawing\n");
-        Paint_SelectImage(img);
-        Paint_Clear(WHITE);
-        Paint_DrawString_EN(15, 15, "Hello, this is ggtag!", &Font16, WHITE, BLACK);
-        EPD_2in13_V3_Display_Base(img);
+        Paint_NewImage(img, EPD_2in13_V3_WIDTH, EPD_2in13_V3_HEIGHT, 90, WHITE);
+        eink_print_text("Hello, this is ggtag!", img, false);
         DEV_Delay_ms(1000);
     }
-
-    gpio_init(LED_PIN) ;
-    gpio_set_dir(LED_PIN, GPIO_OUT);
-    gpio_set_dir(WAKE_PIN, GPIO_IN);
-    gpio_put(LED_PIN,1);
 
     // initialize ggwave
     {
@@ -214,66 +285,60 @@ int main(void) {
         printf("ggwave initialized successfully\n");
     }
 
-    // initialize the PDM microphone
-    if (pdm_microphone_init(&config) < 0) {
-        printf("PDM microphone initialization failed!\n");
-        while (1) { tight_loop_contents(); }
-    }
-
-    // set callback that is called when all the samples in the library
-    // internal sample buffer are ready for reading
-    pdm_microphone_set_samples_ready_handler(on_pdm_samples_ready);
-
     int niter = 0;
     int sampleCount = 0;
     uint8_t lastData[32];
 
-    printf("Switching to XOSC\n");
-
+    // needed for the deep sleep functionality
     rtc_init();
-
-    // Wait for the fifo to be drained so we get reliable output
-    uart_default_tx_wait_blocking();
-
-    // UART will be reconfigured by sleep_run_from_xosc
-    // TODO: for some reason this blocks on the ggtag pico
-    //       when I run it on the original pico - it works
-    //sleep_run_from_xosc();
-
+    measure_freqs();
 
     // I need this for debugging on the non-ggtag pico
-    printf("Blinking for 2 seconds\n");
+    printf("Blinking for 1 second\n");
 
     for (int i = 0; i < 10; ++i) {
         gpio_put(LED_PIN, 1);
-        sleep_ms(100);
+        sleep_ms(50);
         gpio_put(LED_PIN, 0);
-        sleep_ms(100);
+        sleep_ms(50);
     }
 
     while (1) {
-        bool pressed = get_bootsel_button();
-
-        if (!pressed) {
+        // go to deep sleep for 3 seconds
+        {
+            uart_default_tx_wait_blocking();
             gpio_put(LED_PIN, 0);
 
-            printf("sleeping\n");
-            // TODO: currently this does not work for some reason
-            //       most likely is because the sleep_run_from_xosc() above is not working
-            //rtc_sleep();
+            rtc_sleep(45, 3);
         }
 
-        // debugging ..
+        // needed to debug using the Pico RP LED
+        for (int i = 0; i < 3; ++i) {
+            gpio_put(LED_PIN, 1);
+            sleep_ms(50);
+            gpio_put(LED_PIN, 0);
+            sleep_ms(50);
+        }
+
         gpio_put(LED_PIN, 1);
-        sleep_ms(100);
-        gpio_put(LED_PIN, 0);
-        sleep_ms(100);
 
         // bootsel is pressed - init mic and listen for AWAKE_RUN_S seconds
-        pressed = get_bootsel_button();
+        bool pressed = get_bootsel_button();
         if (pressed) {
             gpio_put(LED_PIN, 1);
             printf("Button pressed\n");
+
+            eink_print_text("Listening ...", img, true);
+
+            // initialize the PDM microphone
+            if (pdm_microphone_init(&config) < 0) {
+                printf("PDM microphone initialization failed!\n");
+                while (1) { tight_loop_contents(); }
+            }
+
+            // set callback that is called when all the samples in the library
+            // internal sample buffer are ready for reading
+            pdm_microphone_set_samples_ready_handler(on_pdm_samples_ready);
 
             if (pdm_microphone_start() < 0) {
                 printf("PDM microphone start failed!\n");
@@ -311,10 +376,7 @@ int main(void) {
                         if (memcmp(result.data(), lastData, nr) != 0) {
                             printf("Received data with length %d bytes\n", nr); // should be equal to p.payloadLength
                             printf("%s\n", result.data());
-                            Paint_SelectImage(img);
-                            Paint_Clear(WHITE);
-                            Paint_DrawString_EN(15, 15, (const char*) result.data(), &Font16, WHITE, BLACK);
-                            EPD_2in13_V3_Display_Base(img);
+                            eink_print_text((const char *) result.data(), img, false);
                             memcpy(lastData, result.data(), nr);
 
                             totalSamples = AWAKE_RUN_S*SAMPLE_RATE;
@@ -334,9 +396,12 @@ int main(void) {
 
             // stop capturing data from the PDM microphone
             pdm_microphone_stop();
+            pdm_microphone_deinit();
 
             printf("done\n");
         }
+
+        gpio_put(LED_PIN, 0);
     }
 
     return 0;
