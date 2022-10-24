@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.12)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS "on")
+
 # initialize pico_sdk from GIT
 # (note this can come from environment, CMake cache etc)
 # set(PICO_SDK_FETCH_FROM_GIT on)
@@ -14,38 +16,51 @@ project(ggtag)
 # initialize the Pico SDK
 pico_sdk_init()
 
-add_library(pico_pdm_microphone INTERFACE)
+#
+# pico_pdm_microphone
+#
 
-target_sources(pico_pdm_microphone INTERFACE
+set(TARGET pico_pdm_microphone)
+
+add_library(${TARGET} INTERFACE)
+
+target_sources(${TARGET} INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/src/pdm_microphone.c
     ${CMAKE_CURRENT_LIST_DIR}/src/OpenPDM2PCM/OpenPDMFilter.c
 )
 
-target_include_directories(pico_pdm_microphone INTERFACE
+target_include_directories(${TARGET} INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/src/include
 )
 
-pico_generate_pio_header(pico_pdm_microphone ${CMAKE_CURRENT_LIST_DIR}/src/pdm_microphone.pio)
+pico_generate_pio_header(${TARGET} ${CMAKE_CURRENT_LIST_DIR}/src/pdm_microphone.pio)
 
-target_link_libraries(pico_pdm_microphone INTERFACE pico_stdlib hardware_dma hardware_pio)
+target_link_libraries(${TARGET} INTERFACE pico_stdlib hardware_dma hardware_pio)
 
+#
+# ggwave
+#
 
-add_library(ggwave INTERFACE)
+set(TARGET ggwave)
 
-target_sources(ggwave INTERFACE
+add_library(${TARGET} INTERFACE)
+
+target_sources(${TARGET} INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/ggwave/src/ggwave.cpp
 )
 
-target_include_directories(ggwave INTERFACE
+target_include_directories(${TARGET} INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/ggwave/include
 )
 
-add_executable(ggtag
-    ${CMAKE_CURRENT_LIST_DIR}/src/main.cpp
-)
+#
+# epd
+#
 
-add_library(epd INTERFACE)
-target_sources(epd INTERFACE
+set(TARGET epd)
+
+add_library(${TARGET} INTERFACE)
+target_sources(${TARGET} INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/src/epd/DEV_Config.c
     ${CMAKE_CURRENT_LIST_DIR}/src/epd/EPD_2in13_V3.c
     ${CMAKE_CURRENT_LIST_DIR}/src/epd/GUI_Paint.c
@@ -55,15 +70,43 @@ target_sources(epd INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/src/epd/font20.c
     ${CMAKE_CURRENT_LIST_DIR}/src/epd/font24.c
 )
-target_include_directories(epd INTERFACE
+target_include_directories(${TARGET} INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/src/epd
 )
 
-target_link_libraries(ggtag PUBLIC pico_pdm_microphone ggwave epd hardware_spi hardware_sleep)
+#
+# ggtag
+#
+
+set(TARGET ggtag)
+
+add_executable(${TARGET}
+    ${CMAKE_CURRENT_LIST_DIR}/src/main.cpp
+)
+
+target_link_libraries(${TARGET} PUBLIC pico_pdm_microphone ggwave epd hardware_spi hardware_sleep)
 
 # enable usb output, disable uart output
-pico_enable_stdio_usb(ggtag 1)
-pico_enable_stdio_uart(ggtag 0)
+pico_enable_stdio_usb (${TARGET} 1)
+pico_enable_stdio_uart(${TARGET} 0)
 
 # create map/bin/hex/uf2 file in addition to ELF.
-pico_add_extra_outputs(ggtag)
+pico_add_extra_outputs(${TARGET})
+
+#
+# sleep_test0
+#
+
+set(TARGET sleep_test0)
+
+add_executable(${TARGET}
+    ${CMAKE_CURRENT_LIST_DIR}/src/sleep_test0.cpp
+)
+
+target_link_libraries(${TARGET} PUBLIC pico_stdlib hardware_sleep)
+
+# enable usb output, disable uart output
+pico_enable_stdio_usb (${TARGET} 1)
+pico_enable_stdio_uart(${TARGET} 0)
+
+pico_add_extra_outputs(${TARGET})
