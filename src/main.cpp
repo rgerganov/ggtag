@@ -236,7 +236,7 @@ int main(void) {
         }
         printf("e-Paper Init and Clear...\n");
         EPD_2in13_V3_Init();
-        EPD_2in13_V3_Clear();
+        //EPD_2in13_V3_Clear(); // GG: this seems to not be needed
 
         //Create a new image cache
         UWORD imgSize = ((EPD_2in13_V3_WIDTH % 8 == 0)? (EPD_2in13_V3_WIDTH / 8 ): (EPD_2in13_V3_WIDTH / 8 + 1)) * EPD_2in13_V3_HEIGHT;
@@ -329,7 +329,7 @@ int main(void) {
             gpio_put(LED_PIN, 1);
             printf("Button pressed\n");
 
-            // the display should turn on when Display() is called
+            EPD_2in13_V3_Init(); // GG: without this, the display is not working after deep sleep
             eink_print_text("Listening ...", img, true);
 
             // initialize the PDM microphone
