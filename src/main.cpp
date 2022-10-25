@@ -22,6 +22,12 @@
 #include "hardware/structs/sio.h"
 #include "hardware/structs/scb.h"
 
+// deep sleep implementation
+// 0 - no deep sleep at all
+// 1 - deep sleep with RTC wakeup
+// 2 - deep sleep with GPIO wakeup
+//#define GGTAG_DEEP_SLEEP 1 (configured from CMake)
+
 #define LED_PIN 25
 #define WAKE_PIN 15
 
@@ -37,15 +43,20 @@
 // how many seconds to run for after waking up
 #define AWAKE_RUN_S 30
 
+UBYTE *img; // EPD image buffer
+
 volatile int samplesRead = 0;
 
-int16_t sampleBufferCur[BUF_SIZE];        // we read new samples in this buffer
+int16_t sampleBufferCur[BUF_SIZE];         // we read new samples in this buffer
 int16_t sampleBuffer[3*SAMPLES_PER_FRAME]; // after that, we queue them in this bigger buffer
 
 GGWave ggwave;
 GGWave::TxRxData result;
 
-// Check if BOOTSSEL is pressed
+#if GGTAG_DEEP_SLEEP == 1
+// In this mode, we use RTC to wake up from deep sleep every few seconds and check if the BOOTSEL button is pressed
+
+// Check if BOOTSEL is pressed
 // ref: https://github.com/raspberrypi/pico-examples/blob/master/picoboard/button/button.c
 bool __no_inline_not_in_flash_func(get_bootsel_button)() {
     const uint CS_PIN_INDEX = 1;
@@ -76,8 +87,12 @@ bool __no_inline_not_in_flash_func(get_bootsel_button)() {
 
     return button_state;
 }
+#endif
 
-// microphone configuration
+//
+// microphone
+//
+
 const struct pdm_microphone_config config = {
     // GPIO pin for the PDM DAT signal
     .gpio_data = 0,
@@ -105,10 +120,10 @@ void on_pdm_samples_ready() {
 }
 
 //
-// E-ink display helpers
+// E-ink EPD display helpers
 //
 
-void eink_print_text(const char * text, UBYTE *img, bool partial) {
+void epd_print_text(const char * text, UBYTE *img, bool partial) {
     Paint_SelectImage(img);
     if (!partial) {
         Paint_Clear(WHITE);
@@ -123,7 +138,7 @@ void eink_print_text(const char * text, UBYTE *img, bool partial) {
 }
 
 //
-// deep sleep functionality
+// Pico RP deep sleep functionality
 // ref: https://github.com/ghubcoder/PicoSleepDemo
 //
 
@@ -176,7 +191,10 @@ static void rtc_sleep(int8_t minute_to_sleep_to, int8_t second_to_sleep_to) {
     static uint clock0_orig = clocks_hw->sleep_en0;
     static uint clock1_orig = clocks_hw->sleep_en1;
 
-    datetime_t t = {
+#if GGTAG_DEEP_SLEEP == 1
+    // RTC-based deep sleep, wake up every few seconds
+    {
+        datetime_t t = {
             .year  = 2010,
             .month = 06,
             .day   = 05,
@@ -184,14 +202,14 @@ static void rtc_sleep(int8_t minute_to_sleep_to, int8_t second_to_sleep_to) {
             .hour  = 15,
             .min   = 45,
             .sec   = 00
-    };
+        };
 
-    uart_default_tx_wait_blocking();
-    sleep_run_from_rosc();
+        uart_default_tx_wait_blocking();
+        sleep_run_from_xosc();
 
-    rtc_set_datetime(&t);
+        rtc_set_datetime(&t);
 
-    datetime_t t_alarm = {
+        datetime_t t_alarm = {
             .year  = 2010,
             .month = 06,
             .day   = 05,
@@ -199,11 +217,20 @@ static void rtc_sleep(int8_t minute_to_sleep_to, int8_t second_to_sleep_to) {
             .hour  = 15,
             .min   = minute_to_sleep_to,
             .sec   = second_to_sleep_to
-    };
+        };
 
-    uart_default_tx_wait_blocking();
+        uart_default_tx_wait_blocking();
 
-    sleep_goto_sleep_until(&t_alarm, &sleep_callback);
+        sleep_goto_sleep_until(&t_alarm, &sleep_callback);
+    }
+#elif GGTAG_DEEP_SLEEP == 2
+    // GPIO deep sleep
+    {
+        uart_default_tx_wait_blocking();
+        sleep_run_from_xosc();
+        sleep_goto_dormant_until_edge_high(WAKE_PIN);
+    }
+#endif
 
     uart_default_tx_wait_blocking();
 
@@ -227,13 +254,13 @@ int main(void) {
     gpio_put(LED_PIN,1);
 
     // initialize the e-ink display
-    UBYTE *img;
     {
         printf("EPD module init\n");
         if(DEV_Module_Init() != 0) {
             printf("EPD module init failed\n");
             while (1) { tight_loop_contents(); }
         }
+
         printf("e-Paper Init and Clear...\n");
         EPD_2in13_V3_Init();
         //EPD_2in13_V3_Clear(); // GG: this seems to not be needed
@@ -247,7 +274,7 @@ int main(void) {
 
         printf("Drawing\n");
         Paint_NewImage(img, EPD_2in13_V3_WIDTH, EPD_2in13_V3_HEIGHT, 90, WHITE);
-        eink_print_text("Hello, this is ggtag!", img, false);
+        epd_print_text("Hello, this is ggtag!", img, false);
         DEV_Delay_ms(1000);
         EPD_2in13_V3_Sleep();
     }
@@ -289,48 +316,63 @@ int main(void) {
     int niter = 0;
     int sampleCount = 0;
     uint8_t lastData[32];
+    sprintf((char *) lastData, "Hello, this is ggtag!");
 
-    // needed for the deep sleep functionality
+#if GGTAG_DEEP_SLEEP == 1
     rtc_init();
+#endif
+
+#if GGTAG_DEEP_SLEEP != 0
+    // needed for the deep sleep functionality
     measure_freqs();
+#endif
 
-    // I need this for debugging on the non-ggtag pico
-    printf("Blinking for 1 second\n");
+    // needed this for debugging on the non-ggtag pico
+    //printf("Blinking for 1 second\n");
 
-    for (int i = 0; i < 10; ++i) {
-        gpio_put(LED_PIN, 1);
-        sleep_ms(50);
-        gpio_put(LED_PIN, 0);
-        sleep_ms(50);
-    }
+    //for (int i = 0; i < 10; ++i) {
+    //    gpio_put(LED_PIN, 1);
+    //    sleep_ms(50);
+    //    gpio_put(LED_PIN, 0);
+    //    sleep_ms(50);
+    //}
 
     while (1) {
-        // go to deep sleep for 3 seconds
+#if GGTAG_DEEP_SLEEP != 0
+        // go to deep sleep
         {
             uart_default_tx_wait_blocking();
             gpio_put(LED_PIN, 0);
 
             rtc_sleep(45, 3);
         }
+#endif
 
         // needed to debug using the Pico RP LED
-        for (int i = 0; i < 3; ++i) {
-            gpio_put(LED_PIN, 1);
-            sleep_ms(50);
-            gpio_put(LED_PIN, 0);
-            sleep_ms(50);
-        }
+        //for (int i = 0; i < 3; ++i) {
+        //    gpio_put(LED_PIN, 1);
+        //    sleep_ms(50);
+        //    gpio_put(LED_PIN, 0);
+        //    sleep_ms(50);
+        //}
 
         gpio_put(LED_PIN, 1);
 
-        // bootsel is pressed - init mic and listen for AWAKE_RUN_S seconds
-        bool pressed = get_bootsel_button();
-        if (pressed) {
-            gpio_put(LED_PIN, 1);
-            printf("Button pressed\n");
+#if GGTAG_DEEP_SLEEP == 1
+        // bootsel is pressed
+        bool listen = get_bootsel_button();
+#else
+        bool listen = true;
+#endif
 
-            EPD_2in13_V3_Init(); // GG: without this, the display is not working after deep sleep
-            eink_print_text("Listening ...", img, true);
+        // init mic and listen for AWAKE_RUN_S seconds
+        if (listen) {
+            gpio_put(LED_PIN, 1);
+            printf("Listening for %d seconds\n", AWAKE_RUN_S);
+
+            // wake-up display from deep sleep
+            EPD_2in13_V3_Init();
+            epd_print_text("Listening ...", img, true);
 
             // initialize the PDM microphone
             if (pdm_microphone_init(&config) < 0) {
@@ -348,6 +390,8 @@ int main(void) {
             }
 
             int totalSamples = 0;
+            bool received = false;
+
             while (totalSamples < AWAKE_RUN_S*SAMPLE_RATE) {
                 // wait for new samples
                 while (samplesRead == 0) { tight_loop_contents(); }
@@ -378,10 +422,12 @@ int main(void) {
                         if (memcmp(result.data(), lastData, nr) != 0) {
                             printf("Received data with length %d bytes\n", nr); // should be equal to p.payloadLength
                             printf("%s\n", result.data());
-                            eink_print_text((const char *) result.data(), img, false);
+                            epd_print_text((const char *) result.data(), img, false);
                             memcpy(lastData, result.data(), nr);
 
+                            received = true;
                             totalSamples = AWAKE_RUN_S*SAMPLE_RATE;
+
                             break;
                         }
                     }
@@ -392,6 +438,11 @@ int main(void) {
                     }
                     sampleCount -= SAMPLES_PER_FRAME;
                 }
+            }
+
+            // we didn't receive any new data - restore the last one
+            if (!received) {
+                epd_print_text((const char *) lastData, img, false);
             }
 
             printf("stopping mic\n");
