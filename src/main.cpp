@@ -249,6 +249,7 @@ int main(void) {
         Paint_NewImage(img, EPD_2in13_V3_WIDTH, EPD_2in13_V3_HEIGHT, 90, WHITE);
         eink_print_text("Hello, this is ggtag!", img, false);
         DEV_Delay_ms(1000);
+        EPD_2in13_V3_Sleep();
     }
 
     // initialize ggwave
@@ -328,6 +329,7 @@ int main(void) {
             gpio_put(LED_PIN, 1);
             printf("Button pressed\n");
 
+            // the display should turn on when Display() is called
             eink_print_text("Listening ...", img, true);
 
             // initialize the PDM microphone
@@ -397,6 +399,9 @@ int main(void) {
             // stop capturing data from the PDM microphone
             pdm_microphone_stop();
             pdm_microphone_deinit();
+
+            // put the display to sleep
+            EPD_2in13_V3_Sleep();
 
             printf("done\n");
         }
