@@ -29,7 +29,7 @@
 //#define GGTAG_DEEP_SLEEP 1 (configured from CMake)
 
 #define LED_PIN 25
-#define WAKE_PIN 15
+#define WAKE_PIN 18
 
 #define SAMPLE_RATE 24000
 #define BUF_SIZE 528
@@ -228,7 +228,7 @@ static void rtc_sleep(int8_t minute_to_sleep_to, int8_t second_to_sleep_to) {
     {
         uart_default_tx_wait_blocking();
         sleep_run_from_xosc();
-        sleep_goto_dormant_until_edge_high(WAKE_PIN);
+        sleep_goto_dormant_until_pin(WAKE_PIN, false, false);
     }
 #endif
 

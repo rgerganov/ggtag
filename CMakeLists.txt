@@ -90,7 +90,7 @@ target_link_libraries(${TARGET} PUBLIC pico_pdm_microphone ggwave epd hardware_s
 # 0 - no deep-sleep, stdio works
 # 1 - RTC deep-sleep, stdio doesn't work
 # 2 - GPIO deep-sleep, stdio doesn't work
-set(GGTAG_DEEP_SLEEP 1)
+set(GGTAG_DEEP_SLEEP 2)
 
 target_compile_definitions(${TARGET} PUBLIC -DGGTAG_DEEP_SLEEP=${GGTAG_DEEP_SLEEP})
 
