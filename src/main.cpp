@@ -31,6 +31,9 @@
 #define LED_PIN 25
 #define WAKE_PIN 18
 
+// if there is 1 on this pin then we are running from USB
+#define USB_CHECK_PIN 16
+
 #define SAMPLE_RATE 24000
 #define BUF_SIZE 528
 #define SAMPLES_PER_FRAME 512
@@ -153,7 +156,7 @@ void recover_from_sleep(uint scb_orig, uint clock0_orig, uint clock1_orig){
 
     //reset clocks
     clocks_init();
-    stdio_init_all();
+    stdio_uart_init();
 
     return;
 }
@@ -241,13 +244,8 @@ static void rtc_sleep(int8_t minute_to_sleep_to, int8_t second_to_sleep_to) {
     measure_freqs();
 }
 
-int main(void) {
-    // initialize stdio and wait for USB CDC connect
-    stdio_init_all();
-    // while (!tud_cdc_connected()) {
-    //     tight_loop_contents();
-    // }
-
+void run_from_battery()
+{
     gpio_init(LED_PIN) ;
     gpio_set_dir(LED_PIN, GPIO_OUT);
     gpio_set_dir(WAKE_PIN, GPIO_IN);
@@ -459,6 +457,29 @@ int main(void) {
 
         gpio_put(LED_PIN, 0);
     }
+}
 
+void run_from_usb()
+{
+    // wait for USB CDC connect
+    while (!stdio_usb_connected()) {
+        tight_loop_contents();
+    }
+    while (1) {
+        printf("Running from USB\n");
+        sleep_ms(1000);
+    }
+}
+
+int main(void) {
+    gpio_init(USB_CHECK_PIN);
+    gpio_set_dir(USB_CHECK_PIN, GPIO_IN);
+    if (gpio_get(USB_CHECK_PIN)) {
+        stdio_usb_init();
+        run_from_usb();
+    } else {
+        stdio_uart_init();
+        run_from_battery();
+    }
     return 0;
 }

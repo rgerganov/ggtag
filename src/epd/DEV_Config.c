@@ -113,8 +113,6 @@ Info:
 ******************************************************************************/
 UBYTE DEV_Module_Init(void)
 {
-    stdio_init_all();
-
 	// GPIO Config
 	DEV_GPIO_Init();
 	

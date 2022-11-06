@@ -94,13 +94,11 @@ set(GGTAG_DEEP_SLEEP 2)
 
 target_compile_definitions(${TARGET} PUBLIC -DGGTAG_DEEP_SLEEP=${GGTAG_DEEP_SLEEP})
 
-if (GGTAG_DEEP_SLEEP EQUAL 0)
-    pico_enable_stdio_usb (${TARGET} 1)
-    pico_enable_stdio_uart(${TARGET} 0)
-else()
-    pico_enable_stdio_usb (${TARGET} 0)
-    pico_enable_stdio_uart(${TARGET} 1)
-endif()
+# link both usb and uart and choose one of them in runtime:
+#   if running from USB then use usb output
+#   if running from battery then use uart output
+pico_enable_stdio_usb (${TARGET} 1)
+pico_enable_stdio_uart(${TARGET} 1)
 
 # create map/bin/hex/uf2 file in addition to ELF.
 pico_add_extra_outputs(${TARGET})
