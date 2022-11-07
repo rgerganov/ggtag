@@ -6,7 +6,7 @@
 
 //#include "tusb.h"
 #include "DEV_Config.h"
-#include "EPD_2in13_V3.h"
+#include "EPD_2in13.h"
 #include "GUI_Paint.h"
 
 #include "pico/stdlib.h"
@@ -131,12 +131,12 @@ void epd_print_text(const char * text, UBYTE *img, bool partial) {
     if (!partial) {
         Paint_Clear(WHITE);
         Paint_DrawString_EN(15, 15, text, &Font16, WHITE, BLACK);
-        EPD_2in13_V3_Display(img);
+        EPD_2in13_Display(img, NULL);
     } else {
         Paint_Clear(WHITE);
         Paint_DrawString_EN(15, 31, text, &Font16, WHITE, BLACK);
-        EPD_2in13_V3_Display(img);
-        //EPD_2in13_V3_Display_Partial(img);
+        EPD_2in13_Display(img, NULL);
+        //EPD_2in13_Display_Partial(img, NULL);
     }
 }
 
@@ -260,21 +260,21 @@ void run_from_battery()
         }
 
         printf("e-Paper Init and Clear...\n");
-        EPD_2in13_V3_Init();
-        //EPD_2in13_V3_Clear(); // GG: this seems to not be needed
+        EPD_2in13_Init();
+        //EPD_2in13_Clear(); // GG: this seems to not be needed
 
         //Create a new image cache
-        UWORD imgSize = ((EPD_2in13_V3_WIDTH % 8 == 0)? (EPD_2in13_V3_WIDTH / 8 ): (EPD_2in13_V3_WIDTH / 8 + 1)) * EPD_2in13_V3_HEIGHT;
+        UWORD imgSize = ((EPD_2in13_WIDTH % 8 == 0)? (EPD_2in13_WIDTH / 8 ): (EPD_2in13_WIDTH / 8 + 1)) * EPD_2in13_HEIGHT;
         if((img = (UBYTE *)malloc(imgSize)) == NULL) {
             printf("Failed to allocate memory\n");
             while (1) { tight_loop_contents(); }
         }
 
         printf("Drawing\n");
-        Paint_NewImage(img, EPD_2in13_V3_WIDTH, EPD_2in13_V3_HEIGHT, 90, WHITE);
+        Paint_NewImage(img, EPD_2in13_WIDTH, EPD_2in13_HEIGHT, 90, WHITE);
         epd_print_text("Hello, this is ggtag!", img, false);
         DEV_Delay_ms(1000);
-        EPD_2in13_V3_Sleep();
+        EPD_2in13_Sleep();
     }
 
     // initialize ggwave
@@ -369,7 +369,7 @@ void run_from_battery()
             printf("Listening for %d seconds\n", AWAKE_RUN_S);
 
             // wake-up display from deep sleep
-            EPD_2in13_V3_Init();
+            EPD_2in13_Init();
             epd_print_text("Listening ...", img, true);
 
             // initialize the PDM microphone
@@ -450,7 +450,7 @@ void run_from_battery()
             pdm_microphone_deinit();
 
             // put the display to sleep
-            EPD_2in13_V3_Sleep();
+            EPD_2in13_Sleep();
 
             printf("done\n");
         }
@@ -465,6 +465,29 @@ void run_from_usb()
     while (!stdio_usb_connected()) {
         tight_loop_contents();
     }
+    printf("EPD module init\n");
+    if(DEV_Module_Init() != 0) {
+        printf("EPD module init failed\n");
+        while (1) { tight_loop_contents(); }
+    }
+
+    printf("e-Paper Init and Clear...\n");
+    EPD_2in13_Init();
+    //EPD_2in13_Clear(); // GG: this seems to not be needed
+
+    //Create a new image cache
+    UWORD imgSize = ((EPD_2in13_WIDTH % 8 == 0)? (EPD_2in13_WIDTH / 8 ): (EPD_2in13_WIDTH / 8 + 1)) * EPD_2in13_HEIGHT;
+    if((img = (UBYTE *)malloc(imgSize)) == NULL) {
+        printf("Failed to allocate memory\n");
+        while (1) { tight_loop_contents(); }
+    }
+
+    printf("Drawing\n");
+    Paint_NewImage(img, EPD_2in13_WIDTH, EPD_2in13_HEIGHT, 90, WHITE);
+    epd_print_text("Hello, this is ggtag!", img, false);
+    DEV_Delay_ms(1000);
+    EPD_2in13_Sleep();
+
     while (1) {
         printf("Running from USB\n");
         sleep_ms(1000);

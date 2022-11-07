@@ -34,19 +34,18 @@
 #include "DEV_Config.h"
 
 // Display resolution
-#define EPD_2in13_V3_WIDTH       122
-#define EPD_2in13_V3_HEIGHT      250
+#define EPD_2in13_WIDTH       122
+#define EPD_2in13_HEIGHT      250
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void EPD_2in13_V3_Init(void);
-void EPD_2in13_V3_Clear(void);
-void EPD_2in13_V3_Display(UBYTE *Image);
-void EPD_2in13_V3_Display_Base(UBYTE *Image);
-void EPD_2in13_V3_Display_Partial(UBYTE *Image);
-void EPD_2in13_V3_Sleep(void);
+void EPD_2in13_Init(void);
+void EPD_2in13_Clear(void);
+void EPD_2in13_Display(const UBYTE *bImage, const UBYTE *rImage);
+void EPD_2in13_Display_Partial(const UBYTE *Image);
+void EPD_2in13_Sleep(void);
 
 #ifdef __cplusplus
 }

@@ -28,7 +28,7 @@
 # THE SOFTWARE.
 #
 ******************************************************************************/
-#include "EPD_2in13_V3.h"
+#include "EPD_2in13.h"
 #include "Debug.h"
 
 UBYTE WF_PARTIAL_2IN13_V3[159] =
@@ -233,7 +233,7 @@ static void EPD_2in13_V3_SetCursor(UWORD Xstart, UWORD Ystart)
 function :	Initialize the e-Paper register
 parameter:
 ******************************************************************************/
-void EPD_2in13_V3_Init(void)
+void EPD_2in13_Init(void)
 {
 	EPD_2in13_V3_Reset();
 	DEV_Delay_ms(100);
@@ -250,7 +250,7 @@ void EPD_2in13_V3_Init(void)
 	EPD_2in13_V3_SendCommand(0x11); //data entry mode       
 	EPD_2in13_V3_SendData(0x03);
 
-	EPD_2in13_V3_SetWindows(0, 0, EPD_2in13_V3_WIDTH-1, EPD_2in13_V3_HEIGHT-1);
+	EPD_2in13_V3_SetWindows(0, 0, EPD_2in13_WIDTH-1, EPD_2in13_HEIGHT-1);
 	EPD_2in13_V3_SetCursor(0, 0);
 	
 	EPD_2in13_V3_SendCommand(0x3C); //BorderWavefrom
@@ -271,11 +271,11 @@ void EPD_2in13_V3_Init(void)
 function :	Clear screen
 parameter:
 ******************************************************************************/
-void EPD_2in13_V3_Clear(void)
+void EPD_2in13_Clear(void)
 {
 	UWORD Width, Height;
-    Width = (EPD_2in13_V3_WIDTH % 8 == 0)? (EPD_2in13_V3_WIDTH / 8 ): (EPD_2in13_V3_WIDTH / 8 + 1);
-    Height = EPD_2in13_V3_HEIGHT;
+    Width = (EPD_2in13_WIDTH % 8 == 0)? (EPD_2in13_WIDTH / 8 ): (EPD_2in13_WIDTH / 8 + 1);
+    Height = EPD_2in13_HEIGHT;
 	
     EPD_2in13_V3_SendCommand(0x24);
     for (UWORD j = 0; j < Height; j++) 
@@ -294,52 +294,21 @@ function :	Sends the image buffer in RAM to e-Paper and displays
 parameter:
 	image : Image data
 ******************************************************************************/
-void EPD_2in13_V3_Display(UBYTE *Image)
+void EPD_2in13_Display(const UBYTE *blackImage, const UBYTE *redImage)
 {
 	UWORD Width, Height;
-    Width = (EPD_2in13_V3_WIDTH % 8 == 0)? (EPD_2in13_V3_WIDTH / 8 ): (EPD_2in13_V3_WIDTH / 8 + 1);
-    Height = EPD_2in13_V3_HEIGHT;
+    Width = (EPD_2in13_WIDTH % 8 == 0)? (EPD_2in13_WIDTH / 8 ): (EPD_2in13_WIDTH / 8 + 1);
+    Height = EPD_2in13_HEIGHT;
 	
     EPD_2in13_V3_SendCommand(0x24);
     for (UWORD j = 0; j < Height; j++) 
 	{
         for (UWORD i = 0; i < Width; i++) 
 		{
-            EPD_2in13_V3_SendData(Image[i + j * Width]);
+            EPD_2in13_V3_SendData(blackImage[i + j * Width]);
         }
     }	
 	
-	EPD_2in13_V3_TurnOnDisplay();	
-}
-
-
-/******************************************************************************
-function :	Refresh a base image
-parameter:
-	image : Image data	
-******************************************************************************/
-void EPD_2in13_V3_Display_Base(UBYTE *Image)
-{  
-	UWORD Width, Height;
-    Width = (EPD_2in13_V3_WIDTH % 8 == 0)? (EPD_2in13_V3_WIDTH / 8 ): (EPD_2in13_V3_WIDTH / 8 + 1);
-    Height = EPD_2in13_V3_HEIGHT;
-	
-	EPD_2in13_V3_SendCommand(0x24);   //Write Black and White image to RAM
-    for (UWORD j = 0; j < Height; j++) 
-	{
-        for (UWORD i = 0; i < Width; i++) 
-		{        
-			EPD_2in13_V3_SendData(Image[i + j * Width]);
-		}
-	}
-	EPD_2in13_V3_SendCommand(0x26);   //Write Black and White image to RAM
-    for (UWORD j = 0; j < Height; j++) 
-	{
-        for (UWORD i = 0; i < Width; i++) 
-		{
-			EPD_2in13_V3_SendData(Image[i + j * Width]);
-		}
-	}
 	EPD_2in13_V3_TurnOnDisplay();	
 }
 
@@ -348,11 +317,11 @@ function :	Sends the image buffer in RAM to e-Paper and partial refresh
 parameter:
 	image : Image data
 ******************************************************************************/
-void EPD_2in13_V3_Display_Partial(UBYTE *Image)
+void EPD_2in13_Display_Partial(const UBYTE *Image)
 {
 	UWORD Width, Height;
-    Width = (EPD_2in13_V3_WIDTH % 8 == 0)? (EPD_2in13_V3_WIDTH / 8 ): (EPD_2in13_V3_WIDTH / 8 + 1);
-    Height = EPD_2in13_V3_HEIGHT;
+    Width = (EPD_2in13_WIDTH % 8 == 0)? (EPD_2in13_WIDTH / 8 ): (EPD_2in13_WIDTH / 8 + 1);
+    Height = EPD_2in13_HEIGHT;
 	
 	//Reset
     DEV_Digital_Write(EPD_RST_PIN, 0);
@@ -381,7 +350,7 @@ void EPD_2in13_V3_Display_Partial(UBYTE *Image)
 	EPD_2in13_V3_SendCommand(0x20);  //Activate Display Update Sequence
 	EPD_2in13_V3_ReadBusy();  
 	
-	EPD_2in13_V3_SetWindows(0, 0, EPD_2in13_V3_WIDTH-1, EPD_2in13_V3_HEIGHT-1);
+	EPD_2in13_V3_SetWindows(0, 0, EPD_2in13_WIDTH-1, EPD_2in13_HEIGHT-1);
 	EPD_2in13_V3_SetCursor(0, 0);
 
 	EPD_2in13_V3_SendCommand(0x24);   //Write Black and White image to RAM
@@ -399,7 +368,7 @@ void EPD_2in13_V3_Display_Partial(UBYTE *Image)
 function :	Enter sleep mode
 parameter:
 ******************************************************************************/
-void EPD_2in13_V3_Sleep(void)
+void EPD_2in13_Sleep(void)
 {
 	EPD_2in13_V3_SendCommand(0x10); //enter deep sleep
 	EPD_2in13_V3_SendData(0x01); 

@@ -13,6 +13,8 @@ include(pico_extras_import.cmake)
 
 project(ggtag)
 
+set(EPD "waveshare" CACHE STRING "2.13inch waveshare EPD")
+
 # initialize the Pico SDK
 pico_sdk_init()
 
@@ -62,7 +64,6 @@ set(TARGET epd)
 add_library(${TARGET} INTERFACE)
 target_sources(${TARGET} INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/src/epd/DEV_Config.c
-    ${CMAKE_CURRENT_LIST_DIR}/src/epd/EPD_2in13_V3.c
     ${CMAKE_CURRENT_LIST_DIR}/src/epd/GUI_Paint.c
     ${CMAKE_CURRENT_LIST_DIR}/src/epd/font8.c
     ${CMAKE_CURRENT_LIST_DIR}/src/epd/font12.c
@@ -70,6 +71,19 @@ target_sources(${TARGET} INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/src/epd/font20.c
     ${CMAKE_CURRENT_LIST_DIR}/src/epd/font24.c
 )
+if (EPD STREQUAL "waveshare")
+    message("Using waveshare e-paper display")
+    target_sources(${TARGET} INTERFACE
+        ${CMAKE_CURRENT_LIST_DIR}/src/epd/EPD_2in13_V3.c
+    )
+elseif (EPD STREQUAL "rhink")
+    message("Using rhink e-paper display")
+    target_sources(${TARGET} INTERFACE
+        ${CMAKE_CURRENT_LIST_DIR}/src/epd/EPD_2in13_rhink.c
+    )
+else()
+    message(FATAL_ERROR "Unsupported EPD: ${EPD}")
+endif()
 target_include_directories(${TARGET} INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/src/epd
 )
