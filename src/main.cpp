@@ -470,10 +470,8 @@ void run_from_usb()
         printf("EPD module init failed\n");
         while (1) { tight_loop_contents(); }
     }
-
     printf("e-Paper Init and Clear...\n");
     EPD_2in13_Init();
-    //EPD_2in13_Clear(); // GG: this seems to not be needed
 
     //Create a new image cache
     UWORD imgSize = ((EPD_2in13_WIDTH % 8 == 0)? (EPD_2in13_WIDTH / 8 ): (EPD_2in13_WIDTH / 8 + 1)) * EPD_2in13_HEIGHT;
@@ -482,15 +480,23 @@ void run_from_usb()
         while (1) { tight_loop_contents(); }
     }
 
-    printf("Drawing\n");
-    Paint_NewImage(img, EPD_2in13_WIDTH, EPD_2in13_HEIGHT, 90, WHITE);
-    epd_print_text("Hello, this is ggtag!", img, false);
-    DEV_Delay_ms(1000);
-    EPD_2in13_Sleep();
-
+    char text[256];
+    int ind = 0;
     while (1) {
-        printf("Running from USB\n");
-        sleep_ms(1000);
+        int ret = getchar_timeout_us(100000); // 100ms
+        if (ret < 0) {
+            continue;
+        }
+        ind = 0;
+        for (int i = 0; i < ret; i++) {
+            text[ind++] = getchar_timeout_us(1000);
+        }
+        text[ind] = 0;
+        printf("Drawing\n");
+        Paint_NewImage(img, EPD_2in13_WIDTH, EPD_2in13_HEIGHT, 90, WHITE);
+        epd_print_text(text, img, false);
+        printf("Done.\n");
+        stdio_flush();
     }
 }
 
