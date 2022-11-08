@@ -9,18 +9,25 @@
         <script src="js/ggtag.js"></script>
     </head>
 <body>
-
+<div>
+    <form onsubmit="return onRender();" action="#">
+        <input type="text" id="inp" name="inp" value="\x30\y10\tHello world\f2\x40\y30\tggtag\f3\x50\y60\tLZ2RZG">
+        <input type="submit" value="Render">
+    </form>
+</div>
+<br/>
 <canvas id="ggCanvas" width="250" height="122" style="border:1px solid #d3d3d3;">
 Your browser does not support the HTML canvas tag.</canvas>
-
 <script>
 "use strict";
-let c = document.getElementById("ggCanvas");
-let ctx = c.getContext("2d");
-DrawString(ctx, Font16, "Hello world", 30, 10);
-DrawString(ctx, Font20, "ggtag", 40, 30);
-ctx.fillStyle = "#FF0000";
-DrawString(ctx, Font24, "LZ2RZG", 50, 60);
+function onRender()
+{
+    var inp = document.getElementById("inp");
+    let cmds = parse(inp.value);
+    render(cmds);
+    return false;
+}
+// TODO: encode commands to binary and send to ggtag over WebSerial or sound
 </script>
 
 </body>
