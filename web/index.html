@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>ggtag</title>
+        <meta charset="utf-8">
+        <script src="js/font16.js"></script>
+        <script src="js/font20.js"></script>
+        <script src="js/font24.js"></script>
+        <script src="js/ggtag.js"></script>
+    </head>
+<body>
+
+<canvas id="ggCanvas" width="250" height="122" style="border:1px solid #d3d3d3;">
+Your browser does not support the HTML canvas tag.</canvas>
+
+<script>
+"use strict";
+let c = document.getElementById("ggCanvas");
+let ctx = c.getContext("2d");
+DrawString(ctx, Font16, "Hello world", 30, 10);
+DrawString(ctx, Font20, "ggtag", 40, 30);
+ctx.fillStyle = "#FF0000";
+DrawString(ctx, Font24, "LZ2RZG", 50, 60);
+</script>
+
+</body>
+</html>
