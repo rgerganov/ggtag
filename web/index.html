@@ -10,24 +10,55 @@
     </head>
 <body>
 <div>
-    <form onsubmit="return onRender();" action="#">
-        <input type="text" id="inp" name="inp" value="\x30\y10\tHello world\f2\x40\y30\tggtag\f3\x50\y60\tLZ2RZG">
-        <input type="submit" value="Render">
-    </form>
+    <input type="text" id="inp" name="inp" value="\x30\y10\tHello world\f2\x40\y30\tggtag\f3\x50\y60\tLZ2RZG"/>
+    <button id="preview">Preview</button>
 </div>
 <br/>
-<canvas id="ggCanvas" width="250" height="122" style="border:1px solid #d3d3d3;">
-Your browser does not support the HTML canvas tag.</canvas>
+<div>
+    <canvas id="ggCanvas" width="250" height="122" style="border:1px solid #d3d3d3;">
+    Your browser does not support the HTML canvas tag.
+    </canvas>
+</div>
+<div>
+    <label class="control-label col-sm-2">Interface:</label>
+    <label><input type="radio" name="iface" value="serial" checked>Serial</label>
+    <label><input type="radio" name="iface" value="sound">Sound</label>
+    <div>
+        <button id="program">Program</button>
+    </div>
+</div>
 <script>
 "use strict";
-function onRender()
-{
-    var inp = document.getElementById("inp");
-    let cmds = parse(inp.value);
-    render(cmds);
-    return false;
-}
-// TODO: encode commands to binary and send to ggtag over WebSerial or sound
+let previewButton = document.getElementById('preview');
+previewButton.addEventListener('click', async () => {
+    let inp = document.getElementById("inp");
+    try {
+        let cmds = parse(inp.value);
+        render(cmds);
+    } catch (e) {
+        alert(e);
+        return;
+    }
+});
+let programButton = document.getElementById('program');
+programButton.addEventListener('click', async () => {
+    let inp = document.getElementById("inp");
+    let iface = document.querySelector('input[name="iface"]:checked').value;
+    try {
+        // TODO: encode commands to binary
+        let cmds = [];
+        programButton.disabled = true;
+        if (iface == "serial") {
+            await programSerial(inp.value);
+        } else {
+            await programSound(cmds);
+        }
+        programButton.disabled = false;
+    } catch (e) {
+        alert(e);
+        return;
+    }
+});
 </script>
 
 </body>

@@ -190,3 +190,58 @@ function render(cmds)
         }
     }
 }
+
+async function readSerialOutput(port)
+{
+    const textDecoder = new TextDecoderStream();
+    const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
+    const reader = textDecoder.readable.getReader();
+    let result = false;
+    while (true) {
+        // wait 20sec max after each read()
+        let timerId = setTimeout(() => reader.cancel(), 20000);
+        const { value, done } = await reader.read();
+        clearTimeout(timerId);
+        if (done) {
+          // timeout occurred and reader.cancel() has been called.
+          break;
+        }
+        console.log(">>" + value);
+        if (value.startsWith("Done.")) {
+            result = true;
+            reader.cancel();
+            break;
+        }
+    }
+    reader.releaseLock();
+    await readableStreamClosed.catch(() => { /* Ignore the error */ });
+    return result;
+}
+
+async function programSerial(inp)
+{
+    console.log("Programming over serial port");
+    if ("serial" in navigator) {
+        const port = await navigator.serial.requestPort();
+        await port.open({ baudRate: 115200 });
+        const closedPromise = readSerialOutput(port);
+
+        const writer = port.writable.getWriter();
+        let buf = new Uint8Array(inp.length + 1);
+        buf[0] = inp.length;
+        for (let i = 1; i < buf.length; i++) {
+            buf[i] = inp.charCodeAt(i-1);
+        }
+        await writer.write(buf);
+        writer.releaseLock();
+
+        let result = await closedPromise;
+        await port.close();
+        console.log("All done, result: " + result);
+    }
+}
+
+async function programSound(cmds)
+{
+    console.log("TODO: programming via sound");
+}
