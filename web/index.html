@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html>
     <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
         <title>ggtag</title>
         <meta charset="utf-8">
         <script src="js/font16.js"></script>
@@ -9,23 +14,41 @@
         <script src="js/ggtag.js"></script>
     </head>
 <body>
-<div>
-    <input type="text" id="inp" name="inp" value="\x30\y10\tHello world\f2\x40\y30\tggtag\f3\x50\y60\tLZ2RZG"/>
-    <button id="preview">Preview</button>
-</div>
-<br/>
-<div>
-    <canvas id="ggCanvas" width="250" height="122" style="border:1px solid #d3d3d3;">
-    Your browser does not support the HTML canvas tag.
-    </canvas>
-</div>
-<div>
-    <label class="control-label col-sm-2">Interface:</label>
-    <label><input type="radio" name="iface" value="serial" checked>Serial</label>
-    <label><input type="radio" name="iface" value="sound">Sound</label>
-    <div>
-        <button id="program">Program</button>
+<div class="container">
+  <div class="row my-3">
+    <div class="input-group">
+      <input type="text" id="inp" class="form-control mr-3" value="\x30\y10\tHello world\f2\x40\y30\tggtag\f3\x50\y60\tLZ2RZG">
+      <button class="btn btn-secondary" type="button" id="preview">Preview</button>
     </div>
+  </div>
+  <div class="row mb-3 ml-2">
+    <canvas id="ggCanvas" width="250" height="122" style="border:2px solid #d3d3d3;">
+      Your browser does not support the HTML canvas tag.
+    </canvas>
+  </div>
+
+  <fieldset class="form-group">
+    <div class="row">
+      <legend class="col-form-label col-2">Interface:</legend>
+      <div class="col-10">
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="iface" id="ifaceSerial" value="serial" checked>
+            <label class="form-check-label" for="ifaceSerial">
+                Serial
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="iface" id="ifaceSound" value="sound">
+            <label class="form-check-label" for="ifaceSound">
+                Sound
+            </label>
+        </div>
+      </div>
+    </div>
+  </fieldset>
+  <div class="form-group row">
+    <button type="submit" class="btn btn-danger" id="program">Program</button>
+  </div>
 </div>
 <script>
 "use strict";
@@ -60,6 +83,9 @@ programButton.addEventListener('click', async () => {
     }
 });
 </script>
-
+<!-- jQuery first, then Popper.js, then Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.7/dist/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
 </body>
 </html>
