@@ -221,24 +221,29 @@ async function readSerialOutput(port)
 async function programSerial(inp)
 {
     console.log("Programming over serial port");
+    let port = {};
     if ("serial" in navigator) {
-        const port = await navigator.serial.requestPort();
-        await port.open({ baudRate: 115200 });
-        const closedPromise = readSerialOutput(port);
-
-        const writer = port.writable.getWriter();
-        let buf = new Uint8Array(inp.length + 1);
-        buf[0] = inp.length;
-        for (let i = 1; i < buf.length; i++) {
-            buf[i] = inp.charCodeAt(i-1);
-        }
-        await writer.write(buf);
-        writer.releaseLock();
-
-        let result = await closedPromise;
-        await port.close();
-        console.log("All done, result: " + result);
+        // use the WebSerial API
+        port = await navigator.serial.requestPort();
+    } else {
+        // WebSerial over WebUSB (works on Android)
+        port = await exports.serial.requestPort();
     }
+    await port.open({ baudRate: 115200 });
+    const closedPromise = readSerialOutput(port);
+
+    const writer = port.writable.getWriter();
+    let buf = new Uint8Array(inp.length + 1);
+    buf[0] = inp.length;
+    for (let i = 1; i < buf.length; i++) {
+        buf[i] = inp.charCodeAt(i-1);
+    }
+    await writer.write(buf);
+    writer.releaseLock();
+
+    let result = await closedPromise;
+    await port.close();
+    console.log("All done, result: " + result);
 }
 
 async function programSound(cmds)
