@@ -1,4 +1,5 @@
 "use strict";
+
 function drawChar(ctx, font, ch, x, y)
 {
     let offset = (ch.charCodeAt() - ' '.charCodeAt()) * font.height * Math.ceil(font.width / 8);
@@ -246,7 +247,41 @@ async function programSerial(inp)
     console.log("All done, result: " + result);
 }
 
-async function programSound(cmds)
+function convertTypedArray(src, type) {
+    var buffer = new ArrayBuffer(src.byteLength);
+    var baseView = new src.constructor(buffer).set(src);
+    return new type(buffer);
+}
+
+let ggwave = null;
+let audioContext = null;
+let ggwaveInstance = null;
+
+async function programSound(inp)
 {
-    console.log("TODO: programming via sound");
+    console.log("Programming over sound");
+    if (audioContext == null) {
+        audioContext = new AudioContext({sampleRate: 48000});
+    }
+    if (ggwave == null) {
+        ggwave = await ggwave_factory();
+        let parameters = ggwave.getDefaultParameters();
+        parameters.payloadLength = 16;
+        parameters.sampleRateInp = audioContext.sampleRate;
+        parameters.sampleRateOut = audioContext.sampleRate;
+        parameters.operatingMode   = ggwave.GGWAVE_OPERATING_MODE_TX | ggwave.GGWAVE_OPERATING_MODE_USE_DSS
+        ggwaveInstance = ggwave.init(parameters);
+    }
+
+    // generate audio waveform
+    var waveform = ggwave.encode(ggwaveInstance, inp, ggwave.ProtocolId.GGWAVE_PROTOCOL_AUDIBLE_FASTEST, 10)
+
+    // play audio
+    var buf = convertTypedArray(waveform, Float32Array);
+    var buffer = audioContext.createBuffer(1, buf.length, audioContext.sampleRate);
+    buffer.getChannelData(0).set(buf);
+    var source = audioContext.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audioContext.destination);
+    source.start(0);
 }

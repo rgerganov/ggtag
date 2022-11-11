@@ -14,6 +14,7 @@
         <script>var exports = {};</script>
         <!-- Implementation of WebSerial on top of WebUSB, needed for Android phones -->
         <script src="js/serial.js"></script>
+        <script src="js/ggwave.js"></script>
         <script src="js/ggtag.js"></script>
     </head>
 <body>
@@ -55,6 +56,9 @@
 </div>
 <script>
 "use strict";
+window.AudioContext = window.AudioContext || window.webkitAudioContext;
+window.OfflineAudioContext = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+
 let previewButton = document.getElementById('preview');
 previewButton.addEventListener('click', async () => {
     let inp = document.getElementById("inp");
@@ -72,18 +76,16 @@ programButton.addEventListener('click', async () => {
     let iface = document.querySelector('input[name="iface"]:checked').value;
     try {
         // TODO: encode commands to binary
-        let cmds = [];
         programButton.disabled = true;
         if (iface == "serial") {
             await programSerial(inp.value);
         } else {
-            await programSound(cmds);
+            await programSound(inp.value);
         }
-        programButton.disabled = false;
     } catch (e) {
         alert(e);
-        return;
     }
+    programButton.disabled = false;
 });
 </script>
 <!-- jQuery first, then Popper.js, then Bootstrap JS -->
