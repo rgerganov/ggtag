@@ -8,20 +8,18 @@
 
         <title>ggtag</title>
         <meta charset="utf-8">
-        <script src="js/font16.js"></script>
-        <script src="js/font20.js"></script>
-        <script src="js/font24.js"></script>
         <script>var exports = {};</script>
         <!-- Implementation of WebSerial on top of WebUSB, needed for Android phones -->
         <script src="js/serial.js"></script>
         <script src="js/ggwave.js"></script>
         <script src="js/ggtag.js"></script>
+        <script src="js/main.js"></script>
     </head>
 <body>
 <div class="container">
   <div class="row my-3">
     <div class="input-group">
-      <input type="text" id="inp" class="form-control mr-3" value="\x30\y10\tHello world\f2\x40\y30\tggtag\f3\x50\y60\tLZ2RZG">
+      <input type="text" id="inp" class="form-control mr-3" value="\t1,30,10,Hello world\t2,40,30,ggtag\t3,50,60,LZ2RZG">
       <button class="btn btn-secondary" type="button" id="preview">Preview</button>
     </div>
   </div>
@@ -62,20 +60,13 @@ window.OfflineAudioContext = window.OfflineAudioContext || window.webkitOfflineA
 let previewButton = document.getElementById('preview');
 previewButton.addEventListener('click', async () => {
     let inp = document.getElementById("inp");
-    try {
-        let cmds = parse(inp.value);
-        render(cmds);
-    } catch (e) {
-        alert(e);
-        return;
-    }
+    render(inp.value);
 });
 let programButton = document.getElementById('program');
 programButton.addEventListener('click', async () => {
     let inp = document.getElementById("inp");
     let iface = document.querySelector('input[name="iface"]:checked').value;
     try {
-        // TODO: encode commands to binary
         programButton.disabled = true;
         if (iface == "serial") {
             await programSerial(inp.value);

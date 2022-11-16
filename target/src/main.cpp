@@ -8,10 +8,10 @@
 #include "DEV_Config.h"
 #include "EPD_2in13.h"
 #include "GUI_Paint.h"
+#include "pdm_microphone.h"
 
 #include "pico/stdlib.h"
 #include "pico/sleep.h"
-#include "pico/pdm_microphone.h"
 
 #include "hardware/clocks.h"
 #include "hardware/gpio.h"

@@ -27,15 +27,16 @@ set(TARGET pico_pdm_microphone)
 add_library(${TARGET} INTERFACE)
 
 target_sources(${TARGET} INTERFACE
-    ${CMAKE_CURRENT_LIST_DIR}/src/pdm_microphone.c
-    ${CMAKE_CURRENT_LIST_DIR}/src/OpenPDM2PCM/OpenPDMFilter.c
+    ${CMAKE_CURRENT_LIST_DIR}/target/src/pdm_microphone.c
+    ${CMAKE_CURRENT_LIST_DIR}/target/src/OpenPDMFilter.c
 )
 
 target_include_directories(${TARGET} INTERFACE
-    ${CMAKE_CURRENT_LIST_DIR}/src/include
+    ${CMAKE_CURRENT_LIST_DIR}/target/include
+    ${CMAKE_CURRENT_LIST_DIR}/shared/include
 )
 
-pico_generate_pio_header(${TARGET} ${CMAKE_CURRENT_LIST_DIR}/src/pdm_microphone.pio)
+pico_generate_pio_header(${TARGET} ${CMAKE_CURRENT_LIST_DIR}/target/src/pdm_microphone.pio)
 
 target_link_libraries(${TARGET} INTERFACE pico_stdlib hardware_dma hardware_pio)
 
@@ -63,29 +64,29 @@ set(TARGET epd)
 
 add_library(${TARGET} INTERFACE)
 target_sources(${TARGET} INTERFACE
-    ${CMAKE_CURRENT_LIST_DIR}/src/epd/DEV_Config.c
-    ${CMAKE_CURRENT_LIST_DIR}/src/epd/GUI_Paint.c
-    ${CMAKE_CURRENT_LIST_DIR}/src/epd/font8.c
-    ${CMAKE_CURRENT_LIST_DIR}/src/epd/font12.c
-    ${CMAKE_CURRENT_LIST_DIR}/src/epd/font16.c
-    ${CMAKE_CURRENT_LIST_DIR}/src/epd/font20.c
-    ${CMAKE_CURRENT_LIST_DIR}/src/epd/font24.c
+    ${CMAKE_CURRENT_LIST_DIR}/target/src/DEV_Config.c
+    ${CMAKE_CURRENT_LIST_DIR}/shared/src/GUI_Paint.c
+    ${CMAKE_CURRENT_LIST_DIR}/shared/src/font8.c
+    ${CMAKE_CURRENT_LIST_DIR}/shared/src/font12.c
+    ${CMAKE_CURRENT_LIST_DIR}/shared/src/font16.c
+    ${CMAKE_CURRENT_LIST_DIR}/shared/src/font20.c
+    ${CMAKE_CURRENT_LIST_DIR}/shared/src/font24.c
 )
 if (EPD STREQUAL "waveshare")
     message("Using waveshare e-paper display")
     target_sources(${TARGET} INTERFACE
-        ${CMAKE_CURRENT_LIST_DIR}/src/epd/EPD_2in13_V3.c
+        ${CMAKE_CURRENT_LIST_DIR}/target/src/EPD_2in13_V3.c
     )
 elseif (EPD STREQUAL "rhink")
     message("Using rhink e-paper display")
     target_sources(${TARGET} INTERFACE
-        ${CMAKE_CURRENT_LIST_DIR}/src/epd/EPD_2in13_rhink.c
+        ${CMAKE_CURRENT_LIST_DIR}/target/src/EPD_2in13_rhink.c
     )
 else()
     message(FATAL_ERROR "Unsupported EPD: ${EPD}")
 endif()
 target_include_directories(${TARGET} INTERFACE
-    ${CMAKE_CURRENT_LIST_DIR}/src/epd
+    ${CMAKE_CURRENT_LIST_DIR}/target/include
 )
 
 #
@@ -95,7 +96,7 @@ target_include_directories(${TARGET} INTERFACE
 set(TARGET ggtag)
 
 add_executable(${TARGET}
-    ${CMAKE_CURRENT_LIST_DIR}/src/main.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/target/src/main.cpp
 )
 
 target_link_libraries(${TARGET} PUBLIC pico_pdm_microphone ggwave epd hardware_spi hardware_sleep)
@@ -124,7 +125,7 @@ pico_add_extra_outputs(${TARGET})
 set(TARGET sleep_test0)
 
 add_executable(${TARGET}
-    ${CMAKE_CURRENT_LIST_DIR}/src/sleep_test0.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/target/src/sleep_test0.cpp
 )
 
 target_link_libraries(${TARGET} PUBLIC pico_stdlib hardware_sleep)

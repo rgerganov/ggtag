@@ -2,7 +2,7 @@
  * Copyright (c) 2021 Arm Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
- * 
+ *
  */
 
 #include <stdlib.h>
@@ -12,11 +12,11 @@
 #include "hardware/dma.h"
 #include "hardware/irq.h"
 
-#include "OpenPDM2PCM/OpenPDMFilter.h"
+#include "OpenPDMFilter.h"
 
 #include "pdm_microphone.pio.h"
 
-#include "pico/pdm_microphone.h"
+#include "pdm_microphone.h"
 
 #define PDM_DECIMATION       64
 #define PDM_RAW_BUFFER_COUNT 2
@@ -51,7 +51,7 @@ int pdm_microphone_init(const struct pdm_microphone_config* config) {
         if (pdm_mic.raw_buffer[i] == NULL) {
             pdm_microphone_deinit();
 
-            return -1;   
+            return -1;
         }
     }
 

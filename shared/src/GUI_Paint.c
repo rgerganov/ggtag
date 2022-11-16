@@ -26,7 +26,7 @@
 * 2. Add void Paint_SetScale(UBYTE scale);
 * -----------------------------------------------------------------------------
 * V3.0(2019-04-18):
-* 1.Change: 
+* 1.Change:
 *    Paint_DrawPoint(..., DOT_STYLE DOT_STYLE)
 * => Paint_DrawPoint(..., DOT_STYLE Dot_Style)
 *    Paint_DrawLine(..., LINE_STYLE Line_Style, DOT_PIXEL Dot_Pixel)
@@ -43,16 +43,16 @@
 * 2.add: Paint_SelectImage()
 *    Select the picture to be drawn
 * 3.add: Paint_SetRotate()
-*    Set the direction of the cache    
-* 4.add: Paint_RotateImage() 
-*    Can flip the picture, Support 0-360 degrees, 
+*    Set the direction of the cache
+* 4.add: Paint_RotateImage()
+*    Can flip the picture, Support 0-360 degrees,
 *    but only 90.180.270 rotation is better
-* 4.add: Paint_SetMirroring() 
+* 4.add: Paint_SetMirroring()
 *    Can Mirroring the picture, horizontal, vertical, origin
-* 5.add: Paint_DrawString_CN() 
-*    Can display Chinese(GB1312)   
+* 5.add: Paint_DrawString_CN()
+*    Can display Chinese(GB1312)
 *
-* ----------------------------------------------------------------------------- 
+* -----------------------------------------------------------------------------
 * V1.0(2018-07-17):
 *   Create library
 *
@@ -76,7 +76,6 @@
 *
 ******************************************************************************/
 #include "GUI_Paint.h"
-#include "DEV_Config.h"
 #include "Debug.h"
 #include <stdint.h>
 #include <stdlib.h>
@@ -100,16 +99,16 @@ void Paint_NewImage(UBYTE *image, UWORD Width, UWORD Height, UWORD Rotate, UWORD
 
     Paint.WidthMemory = Width;
     Paint.HeightMemory = Height;
-    Paint.Color = Color;    
+    Paint.Color = Color;
     Paint.Scale = 2;
     Paint.WidthByte = (Width % 8 == 0)? (Width / 8 ): (Width / 8 + 1);
-    Paint.HeightByte = Height;    
+    Paint.HeightByte = Height;
 //    printf("WidthByte = %d, HeightByte = %d\r\n", Paint.WidthByte, Paint.HeightByte);
 //    printf(" EPD_WIDTH / 8 = %d\r\n",  122 / 8);
-   
+
     Paint.Rotate = Rotate;
     Paint.Mirror = MIRROR_NONE;
-    
+
     if(Rotate == ROTATE_0 || Rotate == ROTATE_180) {
         Paint.Width = Width;
         Paint.Height = Height;
@@ -151,14 +150,14 @@ parameter:
 ******************************************************************************/
 void Paint_SetMirroring(UBYTE mirror)
 {
-    if(mirror == MIRROR_NONE || mirror == MIRROR_HORIZONTAL || 
+    if(mirror == MIRROR_NONE || mirror == MIRROR_HORIZONTAL ||
         mirror == MIRROR_VERTICAL || mirror == MIRROR_ORIGIN) {
         Debug("mirror image x:%s, y:%s\r\n",(mirror & 0x01)? "mirror":"none", ((mirror >> 1) & 0x01)? "mirror":"none");
         Paint.Mirror = mirror;
     } else {
         Debug("mirror should be MIRROR_NONE, MIRROR_HORIZONTAL, \
         MIRROR_VERTICAL or MIRROR_ORIGIN\r\n");
-    }    
+    }
 }
 
 void Paint_SetScale(UBYTE scale)
@@ -189,12 +188,12 @@ void Paint_SetPixel(UWORD Xpoint, UWORD Ypoint, UWORD Color)
     if(Xpoint > Paint.Width || Ypoint > Paint.Height){
         Debug("Exceeding display boundaries\r\n");
         return;
-    }      
+    }
     UWORD X, Y;
     switch(Paint.Rotate) {
     case 0:
         X = Xpoint;
-        Y = Ypoint;  
+        Y = Ypoint;
         break;
     case 90:
         X = Paint.WidthMemory - Ypoint - 1;
@@ -211,7 +210,7 @@ void Paint_SetPixel(UWORD Xpoint, UWORD Ypoint, UWORD Color)
     default:
         return;
     }
-    
+
     switch(Paint.Mirror) {
     case MIRROR_NONE:
         break;
@@ -233,7 +232,7 @@ void Paint_SetPixel(UWORD Xpoint, UWORD Ypoint, UWORD Color)
         Debug("Exceeding display boundaries\r\n");
         return;
     }
-    
+
     if(Paint.Scale == 2){
         UDOUBLE Addr = X / 8 + Y * Paint.WidthByte;
         UBYTE Rdata = Paint.Image[Addr];
@@ -245,7 +244,7 @@ void Paint_SetPixel(UWORD Xpoint, UWORD Ypoint, UWORD Color)
         UDOUBLE Addr = X / 4 + Y * Paint.WidthByte;
         Color = Color % 4;//Guaranteed color scale is 4  --- 0~3
         UBYTE Rdata = Paint.Image[Addr];
-        
+
         Rdata = Rdata & (~(0xC0 >> ((X % 4)*2)));//Clear first, then set value
         Paint.Image[Addr] = Rdata | ((Color << 6) >> ((X % 4)*2));
     }else if(Paint.Scale == 7){
@@ -263,21 +262,21 @@ parameter:
     Color : Painted colors
 ******************************************************************************/
 void Paint_Clear(UWORD Color)
-{	
+{
 	if(Paint.Scale == 2 || Paint.Scale == 4){
 		for (UWORD Y = 0; Y < Paint.HeightByte; Y++) {
 			for (UWORD X = 0; X < Paint.WidthByte; X++ ) {//8 pixel =  1 byte
 				UDOUBLE Addr = X + Y*Paint.WidthByte;
 				Paint.Image[Addr] = Color;
 			}
-		}		
+		}
 	}else if(Paint.Scale == 7){
 		for (UWORD Y = 0; Y < Paint.HeightByte; Y++) {
 			for (UWORD X = 0; X < Paint.WidthByte; X++ ) {
 				UDOUBLE Addr = X + Y*Paint.WidthByte;
 				Paint.Image[Addr] = (Color<<4)|Color;
 			}
-		}		
+		}
 	}
 
 }
