@@ -32,7 +32,7 @@
 #define WAKE_PIN 18
 
 // if there is 1 on this pin then we are running from USB
-#define USB_CHECK_PIN 16
+#define USB_CHECK_PIN 4
 
 #define SAMPLE_RATE 24000
 #define BUF_SIZE 528
@@ -98,10 +98,10 @@ bool __no_inline_not_in_flash_func(get_bootsel_button)() {
 
 const struct pdm_microphone_config config = {
     // GPIO pin for the PDM DAT signal
-    .gpio_data = 0,
+    .gpio_data = 2,
 
     // GPIO pin for the PDM CLK signal
-    .gpio_clk = 1,
+    .gpio_clk = 3,
 
     // PIO instance to use
     .pio = pio0,
