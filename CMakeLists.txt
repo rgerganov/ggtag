@@ -103,9 +103,9 @@ add_executable(${TARGET}
 target_link_libraries(${TARGET} PUBLIC pico_pdm_microphone ggwave epd hardware_spi hardware_sleep)
 
 # deep-sleep mode
-# 0 - no deep-sleep, stdio works
-# 1 - RTC deep-sleep, stdio doesn't work
-# 2 - GPIO deep-sleep, stdio doesn't work
+# 0 - no deep-sleep
+# 1 - RTC deep-sleep
+# 2 - GPIO deep-sleep
 set(GGTAG_DEEP_SLEEP 2)
 
 target_compile_definitions(${TARGET} PUBLIC -DGGTAG_DEEP_SLEEP=${GGTAG_DEEP_SLEEP})

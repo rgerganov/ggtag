@@ -29,7 +29,6 @@
 // 2 - deep sleep with GPIO wakeup
 //#define GGTAG_DEEP_SLEEP 1 (configured from CMake)
 
-#define LED_PIN 25
 #define WAKE_PIN 18
 
 // if there is 1 on this pin then we are running from USB
@@ -247,10 +246,7 @@ static void rtc_sleep(int8_t minute_to_sleep_to, int8_t second_to_sleep_to) {
 
 void run_from_battery()
 {
-    gpio_init(LED_PIN) ;
-    gpio_set_dir(LED_PIN, GPIO_OUT);
     gpio_set_dir(WAKE_PIN, GPIO_IN);
-    gpio_put(LED_PIN,1);
 
     // initialize the e-ink display
     {
@@ -260,22 +256,12 @@ void run_from_battery()
             while (1) { tight_loop_contents(); }
         }
 
-        printf("e-Paper Init and Clear...\n");
-        EPD_2in13_Init();
-        //EPD_2in13_Clear(); // GG: this seems to not be needed
-
         //Create a new image cache
         UWORD imgSize = ((EPD_2in13_WIDTH % 8 == 0)? (EPD_2in13_WIDTH / 8 ): (EPD_2in13_WIDTH / 8 + 1)) * EPD_2in13_HEIGHT;
         if((img = (UBYTE *)malloc(imgSize)) == NULL) {
             printf("Failed to allocate memory\n");
             while (1) { tight_loop_contents(); }
         }
-
-        printf("Drawing\n");
-        Paint_NewImage(img, EPD_2in13_WIDTH, EPD_2in13_HEIGHT, 90, WHITE);
-        epd_print_text("Hello, this is ggtag!", img, false);
-        DEV_Delay_ms(1000);
-        EPD_2in13_Sleep();
     }
 
     // initialize ggwave
@@ -312,11 +298,6 @@ void run_from_battery()
         printf("ggwave initialized successfully\n");
     }
 
-    int niter = 0;
-    int sampleCount = 0;
-    uint8_t lastData[32];
-    sprintf((char *) lastData, "Hello, this is ggtag!");
-
 #if GGTAG_DEEP_SLEEP == 1
     rtc_init();
 #endif
@@ -326,52 +307,14 @@ void run_from_battery()
     measure_freqs();
 #endif
 
-    // needed this for debugging on the non-ggtag pico
-    //printf("Blinking for 1 second\n");
-
-    //for (int i = 0; i < 10; ++i) {
-    //    gpio_put(LED_PIN, 1);
-    //    sleep_ms(50);
-    //    gpio_put(LED_PIN, 0);
-    //    sleep_ms(50);
-    //}
-
+    // keep the lastData between runs so we can detect if new data is being received
+    // the assumption is that two consecutive data buffers will not be the same
+    uint8_t lastData[16] = {0};
+    bool listen = true;
     while (1) {
-#if GGTAG_DEEP_SLEEP != 0
-        // go to deep sleep
-        {
-            uart_default_tx_wait_blocking();
-            gpio_put(LED_PIN, 0);
-
-            rtc_sleep(45, 3);
-        }
-#endif
-
-        // needed to debug using the Pico RP LED
-        //for (int i = 0; i < 3; ++i) {
-        //    gpio_put(LED_PIN, 1);
-        //    sleep_ms(50);
-        //    gpio_put(LED_PIN, 0);
-        //    sleep_ms(50);
-        //}
-
-        gpio_put(LED_PIN, 1);
-
-#if GGTAG_DEEP_SLEEP == 1
-        // bootsel is pressed
-        bool listen = get_bootsel_button();
-#else
-        bool listen = true;
-#endif
-
         // init mic and listen for AWAKE_RUN_S seconds
         if (listen) {
-            gpio_put(LED_PIN, 1);
             printf("Listening for %d seconds\n", AWAKE_RUN_S);
-
-            // wake-up display from deep sleep
-            EPD_2in13_Init();
-            epd_print_text("Listening ...", img, true);
 
             // initialize the PDM microphone
             if (pdm_microphone_init(&config) < 0) {
@@ -389,7 +332,10 @@ void run_from_battery()
             }
 
             int totalSamples = 0;
-            bool received = false;
+            int niter = 0;
+            int sampleCount = 0;
+            int offset = 0;
+            uint8_t data[256] = {0};
 
             while (totalSamples < AWAKE_RUN_S*SAMPLE_RATE) {
                 // wait for new samples
@@ -418,15 +364,19 @@ void run_from_battery()
                     // Check if we have successfully decoded any data:
                     int nr = ggwave.rxTakeData(result);
                     if (nr > 0) {
-                        if (memcmp(result.data(), lastData, nr) != 0) {
-                            printf("Received data with length %d bytes\n", nr); // should be equal to p.payloadLength
-                            printf("%s\n", result.data());
-                            epd_print_text((const char *) result.data(), img, false);
+                        // check if the received data is different from the previous one
+                        if (memcmp(lastData, result.data(), nr) != 0) {
+                            printf("Received %d bytes\n", nr);
+                            memcpy(data + offset, result.data(), nr);
+                            offset += nr;
                             memcpy(lastData, result.data(), nr);
-
-                            received = true;
+                        }
+                        // the first byte is the total length of the data
+                        int dataLength = data[0];
+                        // if we have received all the data, don't wait for more
+                        if (offset >= dataLength + 1) {
+                            printf("Received all %d bytes\n", dataLength);
                             totalSamples = AWAKE_RUN_S*SAMPLE_RATE;
-
                             break;
                         }
                     }
@@ -439,24 +389,38 @@ void run_from_battery()
                 }
             }
 
-            // we didn't receive any new data - restore the last one
-            if (!received) {
-                epd_print_text((const char *) lastData, img, false);
+            // display the data that has been received
+            if (offset > 0) {
+                printf("Drawing\n");
+                EPD_2in13_Init();
+                Paint_NewImage(img, EPD_2in13_WIDTH, EPD_2in13_HEIGHT, 90, WHITE);
+                Paint_Clear(WHITE);
+                renderBits(data+1, data[0]*8);
+                EPD_2in13_Display(img, NULL);
+                // put the display to sleep
+                EPD_2in13_Sleep();
             }
 
             printf("stopping mic\n");
-
             // stop capturing data from the PDM microphone
             pdm_microphone_stop();
             pdm_microphone_deinit();
-
-            // put the display to sleep
-            EPD_2in13_Sleep();
-
             printf("done\n");
         }
 
-        gpio_put(LED_PIN, 0);
+#if GGTAG_DEEP_SLEEP != 0
+        // go to deep sleep
+        {
+            uart_default_tx_wait_blocking();
+
+            rtc_sleep(45, 3);
+        }
+#endif
+
+#if GGTAG_DEEP_SLEEP == 1
+        // bootsel is pressed
+        listen = get_bootsel_button();
+#endif
     }
 }
 
