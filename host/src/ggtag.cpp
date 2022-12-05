@@ -13,6 +13,13 @@ struct TextCmd {
     int text_len;
 };
 
+struct RectCmd {
+    int x1;
+    int y1;
+    int x2;
+    int y2;
+};
+
 struct BitBuffer {
     uint8_t *buffer;
     int capacity; // capacity in bytes
@@ -87,6 +94,25 @@ struct BitBuffer {
         }
         return true;
     }
+    bool addCmd(const RectCmd &cmd)
+    {
+        if (!addBits(RECT_CMD, CMD_BITS)) {
+            return false;
+        }
+        if (!addBits(cmd.x1, X_BITS)) {
+            return false;
+        }
+        if (!addBits(cmd.y1, Y_BITS)) {
+            return false;
+        }
+        if (!addBits(cmd.x2, X_BITS)) {
+            return false;
+        }
+        if (!addBits(cmd.y2, Y_BITS)) {
+            return false;
+        }
+        return true;
+    }
 
     void dumpBits()
     {
@@ -130,6 +156,9 @@ bool parseCommand(const char *input, int *cmd, int *curr_offset)
     switch (input[offset]) {
         case 't':
             *cmd = TEXT_CMD;
+            break;
+        case 'r':
+            *cmd = RECT_CMD;
             break;
         default:
             return false;
@@ -195,6 +224,37 @@ bool parseTextCmd(const char *input, TextCmd *cmd, int *curr_offset)
     return true;
 }
 
+bool parseRectCmd(const char *input, RectCmd *cmd, int *curr_offset)
+{
+    int offset = *curr_offset;
+    if (!input[offset]) {
+        return false;
+    }
+    if (!parseInt(input, &cmd->x1, &offset)) {
+        return false;
+    }
+    if (input[offset++] != ',') {
+        return false;
+    }
+    if (!parseInt(input, &cmd->y1, &offset)) {
+        return false;
+    }
+    if (input[offset++] != ',') {
+        return false;
+    }
+    if (!parseInt(input, &cmd->x2, &offset)) {
+        return false;
+    }
+    if (input[offset++] != ',') {
+        return false;
+    }
+    if (!parseInt(input, &cmd->y2, &offset)) {
+        return false;
+    }
+    *curr_offset = offset;
+    return true;
+}
+
 void printTextCmd(TextCmd *cmd)
 {
     printf("TextCmd: font=%d, x=%d, y=%d, text=", cmd->font, cmd->x, cmd->y);
@@ -218,7 +278,18 @@ bool parse(const char *input, BitBuffer *buf, int *curr_offset)
                 return false;
             }
             printTextCmd(&text_cmd);
-            buf->addCmd(text_cmd);
+            if (!buf->addCmd(text_cmd)) {
+                return false;
+            }
+            break;
+        case RECT_CMD:
+            RectCmd rect_cmd;
+            if (!parseRectCmd(input, &rect_cmd, &offset)) {
+                return false;
+            }
+            if (!buf->addCmd(rect_cmd)) {
+                return false;
+            }
             break;
         case EOF_CMD:
             return true;

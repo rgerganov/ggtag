@@ -3,7 +3,8 @@
 #include <stdint.h>
 
 #define TEXT_CMD     1
-#define EOF_CMD      2
+#define RECT_CMD     2
+#define EOF_CMD      3
 
 #define CMD_BITS     4
 #define FONT_BITS    3
