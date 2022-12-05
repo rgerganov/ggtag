@@ -103,6 +103,33 @@ void renderBits(const uint8_t *input, int bits_count)
                 Paint_DrawLine(x1, y1, x2, y2, BLACK, DOT_PIXEL_1X1, LINE_STYLE_SOLID);
                 break;
             }
+            case QRCODE_CMD: {
+                int pixel_width = br.read(QR_PIXEL_WIDTH);
+                int x = br.read(X_BITS);
+                int y = br.read(Y_BITS);
+                int length = br.read(LENGTH_BITS);
+                if (x < 0 || y < 0 || length < 0) {
+                    return;
+                }
+                char *text = (char*) malloc(length+1);
+                for (int i = 0; i < length; i++) {
+                    int ch = br.read(CHAR_BITS);
+                    text[i] = ch;
+                }
+                text[length] = 0;
+                printf("Render qrcode x=%d y=%d text=%s\n", x, y, text);
+                DOT_PIXEL dot_pixel = DOT_PIXEL_1X1;
+                if (pixel_width == 1) {
+                    dot_pixel = DOT_PIXEL_2X2;
+                } else if (pixel_width == 2) {
+                    dot_pixel = DOT_PIXEL_3X3;
+                } else if (pixel_width == 3) {
+                    dot_pixel = DOT_PIXEL_4X4;
+                }
+                Paint_DrawQRCode(x, y, text, dot_pixel, BLACK);
+                free(text);
+                break;
+            }
             default:
                 return;
         }

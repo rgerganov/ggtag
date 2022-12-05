@@ -76,6 +76,7 @@
 *
 ******************************************************************************/
 #include "GUI_Paint.h"
+#include "qrcodegen.h"
 #include "Debug.h"
 #include <stdint.h>
 #include <stdlib.h>
@@ -773,6 +774,27 @@ void Paint_DrawBitMap(const unsigned char* image_buffer)
         for (x = 0; x < Paint.WidthByte; x++) {//8 pixel =  1 byte
             Addr = x + y * Paint.WidthByte;
             Paint.Image[Addr] = (unsigned char)image_buffer[Addr];
+        }
+    }
+}
+
+void Paint_DrawQRCode(UWORD Xstart, UWORD Ystart, const char *pString, DOT_PIXEL width, UWORD Color)
+{
+    uint8_t qr0[qrcodegen_BUFFER_LEN_MAX];
+    uint8_t tempBuffer[qrcodegen_BUFFER_LEN_MAX];
+    bool ok = qrcodegen_encodeText(pString,
+        tempBuffer, qr0, qrcodegen_Ecc_MEDIUM,
+        qrcodegen_VERSION_MIN, qrcodegen_VERSION_MAX,
+        qrcodegen_Mask_AUTO, true);
+    if (!ok) {
+        return;
+    }
+    int size = qrcodegen_getSize(qr0);
+    for (int y = 0; y < size*width; y++) {
+        for (int x = 0; x < size*width; x++) {
+            if (qrcodegen_getModule(qr0, x/width, y/width)) {
+                Paint_SetPixel(Xstart + x, Ystart + y, Color);
+            }
         }
     }
 }

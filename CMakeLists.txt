@@ -72,6 +72,7 @@ target_sources(${TARGET} INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/shared/src/font16.c
     ${CMAKE_CURRENT_LIST_DIR}/shared/src/font20.c
     ${CMAKE_CURRENT_LIST_DIR}/shared/src/font24.c
+    ${CMAKE_CURRENT_LIST_DIR}/shared/src/qrcodegen.c
 )
 if (EPD STREQUAL "waveshare")
     message("Using waveshare e-paper display")

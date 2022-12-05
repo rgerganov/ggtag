@@ -33,6 +33,14 @@ struct LineCmd {
     int y2;
 };
 
+struct QRCodeCmd {
+    int x;
+    int y;
+    int pixel_width;
+    const char *text;
+    int text_len;
+};
+
 struct BitBuffer {
     uint8_t *buffer;
     int capacity; // capacity in bytes
@@ -83,7 +91,38 @@ struct BitBuffer {
         if (!addBits(TEXT_CMD, CMD_BITS)) {
             return false;
         }
-        if (!addBits(cmd.font, FONT_BITS)) {
+        // font numbers are zero-based
+        if (!addBits(cmd.font-1, FONT_BITS)) {
+            return false;
+        }
+        if (!addBits(cmd.x, X_BITS)) {
+            return false;
+        }
+        if (!addBits(cmd.y, Y_BITS)) {
+            return false;
+        }
+        if (!addBits(cmd.text_len, LENGTH_BITS)) {
+            return false;
+        }
+        const char *ptr = cmd.text;
+        for (int i = 0; i < cmd.text_len; i++) {
+            if (!addBits(*ptr, CHAR_BITS)) {
+                return false;
+            }
+            if (*ptr == '\\') {
+                ptr++;
+            }
+            ptr++;
+        }
+        return true;
+    }
+    bool addCmd(const QRCodeCmd &cmd)
+    {
+        if (!addBits(QRCODE_CMD, CMD_BITS)) {
+            return false;
+        }
+        // pixel_width is zero-based
+        if (!addBits(cmd.pixel_width-1, QR_PIXEL_WIDTH)) {
             return false;
         }
         if (!addBits(cmd.x, X_BITS)) {
@@ -213,6 +252,9 @@ bool parseCommand(const char *input, int *cmd, int *curr_offset)
         case 'l':
             *cmd = LINE_CMD;
             break;
+        case 'q':
+            *cmd = QRCODE_CMD;
+            break;
         default:
             return false;
     }
@@ -243,6 +285,47 @@ bool parseTextCmd(const char *input, TextCmd *cmd, int *curr_offset)
         return false;
     }
     if (!parseInt(input, &cmd->font, &offset)) {
+        return false;
+    }
+    if (input[offset++] != ',') {
+        return false;
+    }
+    if (!parseInt(input, &cmd->x, &offset)) {
+        return false;
+    }
+    if (input[offset++] != ',') {
+        return false;
+    }
+    if (!parseInt(input, &cmd->y, &offset)) {
+        return false;
+    }
+    if (input[offset++] != ',') {
+        return false;
+    }
+    cmd->text = input + offset;
+    cmd->text_len = 0;
+    while (input[offset] != '\0') {
+        if (input[offset] == '\\') {
+            if (input[offset+1] == '\\') {
+                offset += 1;
+            } else {
+                break;
+            }
+        }
+        cmd->text_len++;
+        offset++;
+    }
+    *curr_offset = offset;
+    return true;
+}
+
+bool parseQRCodeCmd(const char *input, QRCodeCmd *cmd, int *curr_offset)
+{
+    int offset = *curr_offset;
+    if (!input[offset]) {
+        return false;
+    }
+    if (!parseInt(input, &cmd->pixel_width, &offset)) {
         return false;
     }
     if (input[offset++] != ',') {
@@ -415,6 +498,15 @@ bool parse(const char *input, BitBuffer *buf, int *curr_offset)
                 return false;
             }
             if (!buf->addCmd(line_cmd)) {
+                return false;
+            }
+            break;
+        case QRCODE_CMD:
+            QRCodeCmd qrcode_cmd;
+            if (!parseQRCodeCmd(input, &qrcode_cmd, &offset)) {
+                return false;
+            }
+            if (!buf->addCmd(qrcode_cmd)) {
                 return false;
             }
             break;

@@ -212,6 +212,9 @@ void Paint_DrawTime(UWORD Xstart, UWORD Ystart, PAINT_TIME *pTime, sFONT* Font, 
 //pic
 void Paint_DrawBitMap(const unsigned char* image_buffer);
 
+// draw QR code
+void Paint_DrawQRCode(UWORD Xstart, UWORD Ystart, const char * pString, DOT_PIXEL width, UWORD Color);
+
 #ifdef __cplusplus
 }
 #endif
