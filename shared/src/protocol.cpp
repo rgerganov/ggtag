@@ -80,6 +80,17 @@ void renderBits(const uint8_t *input, int bits_count)
                 Paint_DrawRectangle(x1, y1, x2, y2, BLACK, DOT_PIXEL_1X1, DRAW_FILL_EMPTY);
                 break;
             }
+            case CIRCLE_CMD: {
+                int x = br.read(X_BITS);
+                int y = br.read(Y_BITS);
+                int r = br.read(R_BITS);
+                if (x < 0 || y < 0 || r < 0) {
+                    return;
+                }
+                printf("Render circle x=%d y=%d r=%d\n", x, y, r);
+                Paint_DrawCircle(x, y, r, BLACK, DOT_PIXEL_1X1, DRAW_FILL_EMPTY);
+                break;
+            }
             default:
                 return;
         }
