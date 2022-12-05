@@ -8,8 +8,10 @@
 #define RECT_CMD     1
 // draw circle command
 #define CIRCLE_CMD   2
+// draw line command
+#define LINE_CMD     3
 
-#define EOF_CMD      3
+#define EOF_CMD      4
 
 // bits for command
 #define CMD_BITS     4
