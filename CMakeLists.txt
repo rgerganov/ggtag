@@ -66,6 +66,7 @@ add_library(${TARGET} INTERFACE)
 target_sources(${TARGET} INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/target/src/DEV_Config.c
     ${CMAKE_CURRENT_LIST_DIR}/shared/src/GUI_Paint.c
+    ${CMAKE_CURRENT_LIST_DIR}/shared/src/protocol.cpp
     ${CMAKE_CURRENT_LIST_DIR}/shared/src/font8.c
     ${CMAKE_CURRENT_LIST_DIR}/shared/src/font12.c
     ${CMAKE_CURRENT_LIST_DIR}/shared/src/font16.c

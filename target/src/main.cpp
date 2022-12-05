@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "protocol.h"
 #include "ggwave/ggwave.h"
 
 //#include "tusb.h"
@@ -480,21 +481,22 @@ void run_from_usb()
         while (1) { tight_loop_contents(); }
     }
 
-    char text[256];
+    uint8_t data[256] = {0};
     int ind = 0;
     while (1) {
-        int ret = getchar_timeout_us(100000); // 100ms
-        if (ret < 0) {
+        int length = getchar_timeout_us(100000); // 100ms
+        if (length < 0) {
             continue;
         }
         ind = 0;
-        for (int i = 0; i < ret; i++) {
-            text[ind++] = getchar_timeout_us(1000);
+        for (int i = 0; i < length; i++) {
+            data[ind++] = getchar_timeout_us(1000);
         }
-        text[ind] = 0;
         printf("Drawing\n");
         Paint_NewImage(img, EPD_2in13_WIDTH, EPD_2in13_HEIGHT, 90, WHITE);
-        epd_print_text(text, img, false);
+        Paint_Clear(WHITE);
+        renderBits(data, length*8);
+        EPD_2in13_Display(img, NULL);
         printf("Done.\n");
         stdio_flush();
     }

@@ -39,8 +39,8 @@ async function readSerialOutput(port)
     const reader = textDecoder.readable.getReader();
     let result = false;
     while (true) {
-        // wait 20sec max after each read()
-        let timerId = setTimeout(() => reader.cancel(), 20000);
+        // wait 30sec max after each read()
+        let timerId = setTimeout(() => reader.cancel(), 30000);
         const { value, done } = await reader.read();
         clearTimeout(timerId);
         if (done) {
