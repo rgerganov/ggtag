@@ -48,6 +48,8 @@ source <path_to_emsdk_env.sh>
 CXX=emcc make
 ```
 
+Live version of the web interface is available at [https://xakcop.com/ggtag](https://xakcop.com/ggtag)
+
 # Flashing the firmware
 
 Press and hold the BOOTSEL button while putting the battery. Copy `build/ggtag.uf2` to the `RPI-RP2` drive. The tag will reboot and run the new firmware.
