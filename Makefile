@@ -13,7 +13,7 @@ OBJ := $(SHARED_SRC)/protocol.o $(SHARED_SRC)/GUI_Paint.o \
 
 ifeq ($(CXX),emcc)
 	EMFLAGS = -s EXPORTED_FUNCTIONS='["_render","_encode","_malloc","_free"]' -s EXPORTED_RUNTIME_METHODS='["ccall","getValue"]' -s ALLOW_MEMORY_GROWTH=1
-	EXE := web/js/ggtag.js
+	EXE := docs/js/ggtag.js
 endif
 CXXFLAGS = -Wall -O2 -I$(SHARED_INC)
 
@@ -33,7 +33,7 @@ $(HOST_SRC)/%.o: $(HOST_SRC)/%.cpp
 	    $(CXX) $(CXXFLAGS) -c $< -o $@
 
 server:
-	python3 -m http.server --directory web
+	python3 -m http.server --directory docs
 
 clean:
 	rm -f $(EXE) $(OBJ)
