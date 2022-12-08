@@ -20,7 +20,7 @@ static void EPD_SendData(UBYTE Data)
 static void EPD_ReadBusy(void)
 {
     Debug("e-Paper busy\r\n");
-    while(DEV_Digital_Read(EPD_BUSY_PIN) == 0) {      //LOW: busy, HIGH: ready
+    while(DEV_Digital_Read(EPD_BUSY_PIN) == 1) {      //LOW: ready, HIGH: busy
         DEV_Delay_ms(10);
     }
     Debug("e-Paper busy release\r\n");
@@ -48,18 +48,34 @@ void EPD_Init()
     EPD_Reset();
     DEV_Delay_ms(100);
 
+    // EPD_SendCommand(0x01);     // POWER SETTING   PWR
+    // EPD_SendData(0x03);      //  x x x x x x VDS_EN VDG_EN
+    // EPD_SendData(0x10);      //  x x x VCOM_SLWE VGH[3:0]   VGH=20V, VGL=-20V
+    // EPD_SendData(0x3F);      //  x x VSH[5:0]  VSH = 15V
+    // EPD_SendData(0x3F);      //  x x VSL[5:0]  VSL=-15V
+    // EPD_SendData(0x14);      //  OPTEN VDHR[6:0]  VHDR=6.4V
+
+    // EPD_SendCommand(0x03);     // POWER OFF sequence setting    PFS
+    // EPD_SendData(0x00);      // x x T_VDS_OFF[1:0] x x x x                 // T_VDS_OFF[1:0] 00=1 frame; 01=2 frame; 10=3 frame; 11=4 fram
+
+    // EPD_SendCommand(0x06);     // booster soft start   BTST
+    // EPD_SendData(0x17);      //  BT_PHA[7:0]
+    // EPD_SendData(0x17);      //  BT_PHB[7:0]
+    // EPD_SendData(0x17);      //  x x BT_PHC[5:0]
+
     EPD_SendCommand(0x04); //power on
     DEV_Delay_ms(10);
     EPD_ReadBusy();
 
     EPD_SendCommand(0x00); // panel setting register
-    EPD_SendData(0xCF);
+    EPD_SendData(0x1F);
+    EPD_SendData(0x0D);
     DEV_Delay_ms(10);
 
-    // EPD_SendCommand(0x61); // RESOLUTION_SETTING
-    // EPD_SendData(EPD_RED_WIDTH);
-    // EPD_SendData(EPD_RED_HEIGHT >> 8);
-    // EPD_SendData(EPD_RED_HEIGHT & 0xFF);
+    EPD_SendCommand(0x61); // RESOLUTION_SETTING
+    EPD_SendData(EPD_WIDTH);
+    EPD_SendData(EPD_HEIGHT >> 8);
+    EPD_SendData(EPD_HEIGHT & 0xFF);
 
     // EPD_SendCommand(0x50);
     // EPD_SendData(0x97);
@@ -81,7 +97,7 @@ void EPD_Clear()
     EPD_SendCommand(0x13);
     for (UWORD j = 0; j < Height; j++) {
         for (UWORD i = 0; i < Width; i++) {
-            EPD_SendData(0x00);
+            EPD_SendData(0xFF);
         }
     }
     EPD_SendCommand(0x11);
@@ -97,14 +113,14 @@ void EPD_Display(const UBYTE *blackImage, const UBYTE *redImage)
     EPD_SendCommand(0x10);
     for (UWORD j = 0; j < Height; j++) {
         for (UWORD i = 0; i < Width; i++) {
-            EPD_SendData(blackImage[i + j * Width]);
+            EPD_SendData(0xFF);
         }
     }
     EPD_SendCommand(0x11);
     EPD_SendCommand(0x13);
     for (UWORD j = 0; j < Height; j++) {
         for (UWORD i = 0; i < Width; i++) {
-            EPD_SendData(redImage ? redImage[i + j * Width] : 0x00);
+            EPD_SendData(blackImage[i + j * Width]);
         }
     }
     EPD_SendCommand(0x11);

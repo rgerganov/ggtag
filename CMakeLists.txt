@@ -13,7 +13,7 @@ include(pico_extras_import.cmake)
 
 project(ggtag)
 
-set(EPD "waveshare" CACHE STRING "2.13inch waveshare EPD")
+set(EPD "2in13-ws" CACHE STRING "2.13inch waveshare EPD")
 
 # initialize the Pico SDK
 pico_sdk_init()
@@ -74,28 +74,37 @@ target_sources(${TARGET} INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/shared/src/font24.c
     ${CMAKE_CURRENT_LIST_DIR}/shared/src/qrcodegen.c
 )
-if (EPD STREQUAL "waveshare")
-    message("Using waveshare e-paper display")
+if (EPD STREQUAL "2in13-ws")
+    message("Using 2.13inch waveshare V3 e-paper display")
     target_sources(${TARGET} INTERFACE
         ${CMAKE_CURRENT_LIST_DIR}/target/src/EPD_2in13_V3.c
     )
-elseif (EPD STREQUAL "rhink")
-    message("Using rhink e-paper display")
+    add_compile_definitions(EPD_2IN13)
+elseif (EPD STREQUAL "2in13-rhink")
+    message("Using 2.13inch RHINK-E0213A219 e-paper display")
     target_sources(${TARGET} INTERFACE
         ${CMAKE_CURRENT_LIST_DIR}/target/src/EPD_2in13_rhink.c
     )
+    add_compile_definitions(EPD_2IN13)
+elseif (EPD STREQUAL "3in52-rse")
+    message("Using 3.52inch RSE0352N01 e-paper display")
+    target_sources(${TARGET} INTERFACE
+        ${CMAKE_CURRENT_LIST_DIR}/target/src/EPD_3in52_rse.c
+    )
+    add_compile_definitions(EPD_3IN52)
 else()
     message(FATAL_ERROR "Unsupported EPD: ${EPD}")
 endif()
 target_include_directories(${TARGET} INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/target/include
+    ${CMAKE_CURRENT_LIST_DIR}/shared/include
 )
 
 #
 # ggtag
 #
 
-set(TARGET ggtag)
+set(TARGET "ggtag-${EPD}")
 
 add_executable(${TARGET}
     ${CMAKE_CURRENT_LIST_DIR}/target/src/main.cpp
@@ -131,6 +140,24 @@ add_executable(${TARGET}
 )
 
 target_link_libraries(${TARGET} PUBLIC pico_stdlib hardware_sleep)
+
+# enable usb output, disable uart output
+pico_enable_stdio_usb (${TARGET} 1)
+pico_enable_stdio_uart(${TARGET} 0)
+
+pico_add_extra_outputs(${TARGET})
+
+#
+# EPD test
+#
+
+set(TARGET "epd_test-${EPD}")
+
+add_executable(${TARGET}
+    ${CMAKE_CURRENT_LIST_DIR}/target/src/epd_test.cpp
+)
+
+target_link_libraries(${TARGET} PUBLIC pico_stdlib epd hardware_spi)
 
 # enable usb output, disable uart output
 pico_enable_stdio_usb (${TARGET} 1)

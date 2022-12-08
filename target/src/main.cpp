@@ -7,7 +7,7 @@
 
 //#include "tusb.h"
 #include "DEV_Config.h"
-#include "EPD_2in13.h"
+#include "EPD.h"
 #include "GUI_Paint.h"
 #include "pdm_microphone.h"
 
@@ -120,24 +120,6 @@ void on_pdm_samples_ready() {
     // callback from library when all the samples in the library
     // internal sample buffer are ready for reading
     samplesRead = pdm_microphone_read(sampleBufferCur, BUF_SIZE);
-}
-
-//
-// E-ink EPD display helpers
-//
-
-void epd_print_text(const char * text, UBYTE *img, bool partial) {
-    Paint_SelectImage(img);
-    if (!partial) {
-        Paint_Clear(WHITE);
-        Paint_DrawString_EN(15, 15, text, &Font16, WHITE, BLACK);
-        EPD_2in13_Display(img, NULL);
-    } else {
-        Paint_Clear(WHITE);
-        Paint_DrawString_EN(15, 31, text, &Font16, WHITE, BLACK);
-        EPD_2in13_Display(img, NULL);
-        //EPD_2in13_Display_Partial(img, NULL);
-    }
 }
 
 //
@@ -257,7 +239,7 @@ void run_from_battery()
         }
 
         //Create a new image cache
-        UWORD imgSize = ((EPD_2in13_WIDTH % 8 == 0)? (EPD_2in13_WIDTH / 8 ): (EPD_2in13_WIDTH / 8 + 1)) * EPD_2in13_HEIGHT;
+        UWORD imgSize = ((EPD_WIDTH % 8 == 0)? (EPD_WIDTH / 8 ): (EPD_WIDTH / 8 + 1)) * EPD_HEIGHT;
         if((img = (UBYTE *)malloc(imgSize)) == NULL) {
             printf("Failed to allocate memory\n");
             while (1) { tight_loop_contents(); }
@@ -392,13 +374,13 @@ void run_from_battery()
             // display the data that has been received
             if (offset > 0) {
                 printf("Drawing\n");
-                EPD_2in13_Init();
-                Paint_NewImage(img, EPD_2in13_WIDTH, EPD_2in13_HEIGHT, 90, WHITE);
+                EPD_Init();
+                Paint_NewImage(img, EPD_WIDTH, EPD_HEIGHT, 90, WHITE);
                 Paint_Clear(WHITE);
                 renderBits(data+1, data[0]*8);
-                EPD_2in13_Display(img, NULL);
+                EPD_Display(img, NULL);
                 // put the display to sleep
-                EPD_2in13_Sleep();
+                EPD_Sleep();
             }
 
             printf("stopping mic\n");
@@ -436,10 +418,10 @@ void run_from_usb()
         while (1) { tight_loop_contents(); }
     }
     printf("e-Paper Init and Clear...\n");
-    EPD_2in13_Init();
+    EPD_Init();
 
     //Create a new image cache
-    UWORD imgSize = ((EPD_2in13_WIDTH % 8 == 0)? (EPD_2in13_WIDTH / 8 ): (EPD_2in13_WIDTH / 8 + 1)) * EPD_2in13_HEIGHT;
+    UWORD imgSize = ((EPD_WIDTH % 8 == 0)? (EPD_WIDTH / 8 ): (EPD_WIDTH / 8 + 1)) * EPD_HEIGHT;
     if((img = (UBYTE *)malloc(imgSize)) == NULL) {
         printf("Failed to allocate memory\n");
         while (1) { tight_loop_contents(); }
@@ -457,10 +439,10 @@ void run_from_usb()
             data[ind++] = getchar_timeout_us(1000);
         }
         printf("Drawing\n");
-        Paint_NewImage(img, EPD_2in13_WIDTH, EPD_2in13_HEIGHT, 90, WHITE);
+        Paint_NewImage(img, EPD_WIDTH, EPD_HEIGHT, 90, WHITE);
         Paint_Clear(WHITE);
         renderBits(data, length*8);
-        EPD_2in13_Display(img, NULL);
+        EPD_Display(img, NULL);
         printf("Done.\n");
         stdio_flush();
     }
