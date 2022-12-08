@@ -124,13 +124,14 @@ async function programSound(input)
         } else {
             throw("Web Audio API is not supported by your browser");
         }
+        let parameters = ggwave.getDefaultParameters();
+        parameters.payloadLength = 16;
+        parameters.sampleRateInp = audioContext.sampleRate;
+        parameters.sampleRateOut = audioContext.sampleRate;
+        parameters.operatingMode   = ggwave.GGWAVE_OPERATING_MODE_TX | ggwave.GGWAVE_OPERATING_MODE_USE_DSS
+        // this must be done only once
+        ggwaveInstance = ggwave.init(parameters);
     }
-    let parameters = ggwave.getDefaultParameters();
-    parameters.payloadLength = 16;
-    parameters.sampleRateInp = audioContext.sampleRate;
-    parameters.sampleRateOut = audioContext.sampleRate;
-    parameters.operatingMode   = ggwave.GGWAVE_OPERATING_MODE_TX | ggwave.GGWAVE_OPERATING_MODE_USE_DSS
-    ggwaveInstance = ggwave.init(parameters);
 
     let promiseResolve;
     const promise = new Promise(resolve => {
