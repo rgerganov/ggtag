@@ -95,6 +95,9 @@ async function programSerial(input)
 }
 
 let ggwave = null;
+ggwave_factory().then(function(obj) {
+    ggwave = obj;
+});
 let audioContext = null;
 let ggwaveInstance = null;
 
@@ -113,17 +116,21 @@ async function programSound(input)
     console.log("Encoded data: " + data);
 
     if (audioContext == null) {
-        audioContext = new AudioContext({sampleRate: 48000});
+        let AudioContext = window.AudioContext // Default
+           || window.webkitAudioContext // Safari and old versions of Chrome
+           || false;
+        if (AudioContext) {
+            audioContext = new AudioContext({sampleRate: 48000});
+        } else {
+            throw("Web Audio API is not supported by your browser");
+        }
     }
-    if (ggwave == null) {
-        ggwave = await ggwave_factory();
-        let parameters = ggwave.getDefaultParameters();
-        parameters.payloadLength = 16;
-        parameters.sampleRateInp = audioContext.sampleRate;
-        parameters.sampleRateOut = audioContext.sampleRate;
-        parameters.operatingMode   = ggwave.GGWAVE_OPERATING_MODE_TX | ggwave.GGWAVE_OPERATING_MODE_USE_DSS
-        ggwaveInstance = ggwave.init(parameters);
-    }
+    let parameters = ggwave.getDefaultParameters();
+    parameters.payloadLength = 16;
+    parameters.sampleRateInp = audioContext.sampleRate;
+    parameters.sampleRateOut = audioContext.sampleRate;
+    parameters.operatingMode   = ggwave.GGWAVE_OPERATING_MODE_TX | ggwave.GGWAVE_OPERATING_MODE_USE_DSS
+    ggwaveInstance = ggwave.init(parameters);
 
     let promiseResolve;
     const promise = new Promise(resolve => {
@@ -136,7 +143,7 @@ async function programSound(input)
             // generate audio waveform
             let waveform = ggwave.encode(ggwaveInstance, data.slice(offset, offset+16), ggwave.ProtocolId.GGWAVE_PROTOCOL_AUDIBLE_FASTEST, 10)
             let buf = new Float32Array(waveform.buffer, waveform.byteOffset, waveform.length/Float32Array.BYTES_PER_ELEMENT);
-            var buffer = audioContext.createBuffer(1, buf.length, audioContext.sampleRate);
+            let buffer = audioContext.createBuffer(1, buf.length, audioContext.sampleRate);
             buffer.getChannelData(0).set(buf);
             let source = audioContext.createBufferSource();
             source.buffer = buffer;
