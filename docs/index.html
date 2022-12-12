@@ -54,24 +54,23 @@
 </div>
 <script>
 "use strict";
-window.AudioContext = window.AudioContext || window.webkitAudioContext;
-window.OfflineAudioContext = window.OfflineAudioContext || window.webkitOfflineAudioContext;
-
 let previewButton = document.getElementById('preview');
 previewButton.addEventListener('click', async () => {
-    let inp = document.getElementById("inp");
-    render(inp.value);
+    let inp = document.getElementById("inp").value;
+    inp = await preprocessImages(inp);
+    render(inp);
 });
 let programButton = document.getElementById('program');
 programButton.addEventListener('click', async () => {
-    let inp = document.getElementById("inp");
+    let inp = document.getElementById("inp").value;
+    inp = await preprocessImages(inp);
     let iface = document.querySelector('input[name="iface"]:checked').value;
     try {
         programButton.disabled = true;
         if (iface == "serial") {
-            await programSerial(inp.value);
+            await programSerial(inp);
         } else {
-            await programSound(inp.value);
+            await programSound(inp);
         }
     } catch (e) {
         alert(e);

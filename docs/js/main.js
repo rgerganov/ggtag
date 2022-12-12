@@ -161,3 +161,61 @@ async function programSound(input)
     console.log("All done");
     Module._free(ptr);
 }
+
+function imageDataToBitmap(imgData)
+{
+    var bitmap = new Uint8Array(Math.ceil(imgData.width * imgData.height / 8));
+    for (var i = 0; i < imgData.data.length; i += 4) {
+        var bit = 0;
+        if (imgData.data[i] == 0) {
+            bit = 1;
+        }
+        var byte = Math.floor(i / 4 / 8);
+        var bitInByte = i / 4 % 8;
+        bitmap[byte] |= bit << bitInByte;
+    }
+    return bitmap;
+}
+
+function bitmapToBase64(bitmap)
+{
+    var base64 = "";
+    for (var i = 0; i < bitmap.length; i++) {
+        base64 += String.fromCharCode(bitmap[i]);
+    }
+    return btoa(base64);
+}
+
+const loadImage = (url) => new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "Anonymous";
+    img.addEventListener('load', () => resolve(img));
+    img.addEventListener('error', (err) => reject(err));
+    img.src = url;
+});
+
+async function preprocessImages(input)
+{
+    const canvas = document.getElementById("ggCanvas");
+    const ctx = canvas.getContext("2d", {willReadFrequently: true});
+    // find all image escape sequences (i.e. "\i<x>,<y>,<url>")
+    let regex = /\\i(\d+),(\d+),([^\\]+)/g;
+    let matches = [...input.matchAll(regex)];
+    for (let match of matches) {
+        try {
+            var img = await loadImage(match[3]);
+        } catch (e) {
+            console.log("Failed to load image: " + match[3]);
+            continue;
+        }
+        let x = match[1];
+        let y = match[2];
+        ctx.drawImage(img, x, y);
+        let imgData = ctx.getImageData(x, y, img.width, img.height);
+        let bitmap = imageDataToBitmap(imgData);
+        let base64 = bitmapToBase64(bitmap);
+        input = input.replace(match[0], `\\b${x},${y},${img.width},${img.height},${base64}`);
+    }
+    console.log(input);
+    return input;
+}
