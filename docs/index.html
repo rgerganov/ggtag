@@ -23,8 +23,18 @@
       <button class="btn btn-secondary" type="button" id="preview">Preview</button>
     </div>
   </div>
+  <div class="row my-3">
+    <div class="form-check form-check-inline">
+      <input class="form-check-input" type="radio" name="tagSize" id="largeRadio" value="large" onclick="changeSize(this);" checked>
+      <label class="form-check-label" for="largeRadio">large</label>
+    </div>
+    <div class="form-check form-check-inline">
+      <input class="form-check-input" type="radio" name="tagSize" id="smallRadio" value="small" onclick="changeSize(this);">
+      <label class="form-check-label" for="smallRadio">small</label>
+    </div>
+  </div>
   <div class="row mb-3 ml-2">
-    <canvas id="ggCanvas" width="250" height="122" style="border:2px solid #d3d3d3;">
+    <canvas id="ggCanvas" width="360" height="240" style="border:2px solid #d3d3d3;">
       Your browser does not support the HTML canvas tag.
     </canvas>
   </div>

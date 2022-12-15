@@ -1,5 +1,17 @@
 "use strict";
 
+function changeSize(radio)
+{
+    let canvas = document.getElementById("ggCanvas");
+    if (radio.value == "small") {
+        canvas.width = 250;
+        canvas.height = 122;
+    } else if (radio.value == "large") {
+        canvas.width = 360;
+        canvas.height = 240;
+    }
+}
+
 function render(input)
 {
     const canvas = document.getElementById("ggCanvas");
