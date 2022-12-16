@@ -5,17 +5,17 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
         <!-- Bootstrap CSS -->
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-
         <title>ggtag</title>
         <meta charset="utf-8">
         <script>var exports = {};</script>
+        <script src="https://use.fontawesome.com/02c2083f80.js"></script>
         <!-- Implementation of WebSerial on top of WebUSB, needed for Android phones -->
         <script src="js/serial.js"></script>
         <script src="js/ggwave.js"></script>
         <script src="js/ggtag.js"></script>
         <script src="js/main.js"></script>
     </head>
-<body>
+<body onload="onLoad()">
 <div class="container">
   <div class="row my-3">
     <div class="input-group">
@@ -59,7 +59,9 @@
     </div>
   </fieldset>
   <div class="form-group row">
-    <button type="submit" class="btn btn-danger" id="program">Program</button>
+    <button type="submit" class="btn btn-sm btn-danger mr-3" id="program">Program <i class="fa fa-cog"></i></button>
+    <button type="submit" class="btn btn-sm btn-info" id="share">Share <i class="fa fa-share"></i></button>
+    <!-- <a class="btn btn-default" href="#"><i class="fa fa-cog"></i> Settings</a> -->
   </div>
 </div>
 <script>
@@ -69,6 +71,14 @@ previewButton.addEventListener('click', async () => {
     let inp = document.getElementById("inp").value;
     inp = await preprocessImages(inp);
     render(inp);
+});
+let inputText = document.getElementById('inp');
+inputText.addEventListener('keydown', async (e) => {
+    if (e.key == 'Enter') {
+        let inp = document.getElementById("inp").value;
+        inp = await preprocessImages(inp);
+        render(inp);
+    }
 });
 let programButton = document.getElementById('program');
 programButton.addEventListener('click', async () => {

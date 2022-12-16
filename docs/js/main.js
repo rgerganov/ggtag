@@ -1,5 +1,25 @@
 "use strict";
 
+function onLoad()
+{
+    const params = new Proxy(new URLSearchParams(window.location.search), {
+        get: (searchParams, prop) => searchParams.get(prop),
+    });
+    let value = params.s;
+    if (value === "s") {
+        changeSize(document.getElementById("smallRadio"));
+        document.getElementById("smallRadio").checked = true;
+    } else if (value === "l") {
+        changeSize(document.getElementById("largeRadio"));
+        document.getElementById("largeRadio").checked = true;
+    }
+    let input = params.i;
+    if (input) {
+        document.getElementById("inp").value = decodeURI(input);
+    }
+    document.getElementById("preview").click();
+}
+
 function changeSize(radio)
 {
     let canvas = document.getElementById("ggCanvas");
