@@ -631,15 +631,16 @@ extern "C" {
             return 0;
         }
         //buf.dumpBytes();
-        uint8_t *ret = (uint8_t*) calloc(buf.size()+1, 1);
+        uint8_t *ret = (uint8_t*) calloc(buf.size()+2, 1);
         if (!ret) {
             return 0;
         }
-        // the first byte is the length of the encoded data
-        ret[0] = buf.size();
+        // the first two byte are the total length of the encoded data
+        ret[0] = buf.size() / 256;
+        ret[1] = buf.size() % 256;
         // followed by the encoded data
-        memcpy(ret+1, buf.buffer, buf.size());
-        *length = buf.size() + 1;
+        memcpy(ret+2, buf.buffer, buf.size());
+        *length = buf.size() + 2;
         return ret;
     }
 

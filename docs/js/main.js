@@ -124,6 +124,10 @@ async function programSound(input)
     let length = Module.getValue(lengthPtr, 'i32');
     console.log("Encoded data length: " + length);
     Module._free(lengthPtr);
+    if (length > 256) {
+        Module._free(ptr);
+        throw "The maximum data length when using sound is 256 bytes";
+    }
     let data = new Uint8Array(Module.HEAPU8.buffer, ptr, length);
     console.log("Encoded data: " + data);
 
@@ -134,6 +138,7 @@ async function programSound(input)
         if (AudioContext) {
             audioContext = new AudioContext({sampleRate: 48000});
         } else {
+            Module._free(ptr);
             throw("Web Audio API is not supported by your browser");
         }
         let parameters = ggwave.getDefaultParameters();

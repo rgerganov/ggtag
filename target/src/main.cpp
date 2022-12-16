@@ -353,10 +353,11 @@ void run_from_battery()
                             offset += nr;
                             memcpy(lastData, result.data(), nr);
                         }
-                        // the first byte is the total length of the data
-                        int dataLength = data[0];
+                        // the first two bytes are the total length of the data
+                        // but we don't support more than 255 bytes when using sound
+                        int dataLength = data[1];
                         // if we have received all the data, don't wait for more
-                        if (offset >= dataLength + 1) {
+                        if (offset >= dataLength + 2) {
                             printf("Received all %d bytes\n", dataLength);
                             totalSamples = AWAKE_RUN_S*SAMPLE_RATE;
                             break;
@@ -427,11 +428,21 @@ void run_from_usb()
         while (1) { tight_loop_contents(); }
     }
 
-    uint8_t data[256] = {0};
     int ind = 0;
     while (1) {
-        int length = getchar_timeout_us(100000); // 100ms
-        if (length < 0) {
+        int l1 = getchar_timeout_us(100000); // 100ms
+        if (l1 < 0) {
+            continue;
+        }
+        int l2 = getchar_timeout_us(100000); // 100ms
+        if (l2 < 0) {
+            continue;
+        }
+        int length = l2 + l1*256;
+        uint8_t *data = (uint8_t *)malloc(length);
+        if (data == NULL) {
+            printf("Failed to allocate memory\nDone.\n");
+            stdio_flush();
             continue;
         }
         ind = 0;
@@ -442,6 +453,7 @@ void run_from_usb()
         Paint_NewImage(img, EPD_WIDTH, EPD_HEIGHT, 90, WHITE);
         Paint_Clear(WHITE);
         renderBits(data, length*8);
+        free(data);
         EPD_Display(img, NULL);
         printf("Done.\n");
         stdio_flush();
