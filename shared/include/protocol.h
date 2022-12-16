@@ -12,8 +12,10 @@
 #define LINE_CMD     3
 // draw qrcode command
 #define QRCODE_CMD   4
+// draw image command
+#define IMAGE_CMD    5
 
-#define EOF_CMD      5
+#define EOF_CMD      6
 
 // bits for command
 #define CMD_BITS       4

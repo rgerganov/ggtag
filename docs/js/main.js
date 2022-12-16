@@ -179,11 +179,11 @@ function imageDataToBitmap(imgData)
     var bitmap = new Uint8Array(Math.ceil(imgData.width * imgData.height / 8));
     for (var i = 0; i < imgData.data.length; i += 4) {
         var bit = 0;
-        if (imgData.data[i] == 0) {
+        if (imgData.data[i] < 128) {
             bit = 1;
         }
         var byte = Math.floor(i / 4 / 8);
-        var bitInByte = i / 4 % 8;
+        var bitInByte = 7 - ((i / 4) % 8);
         bitmap[byte] |= bit << bitInByte;
     }
     return bitmap;
@@ -210,8 +210,8 @@ async function preprocessImages(input)
 {
     const canvas = document.getElementById("ggCanvas");
     const ctx = canvas.getContext("2d", {willReadFrequently: true});
-    // find all image escape sequences (i.e. "\i<x>,<y>,<url>")
-    let regex = /\\i(\d+),(\d+),([^\\]+)/g;
+    // find all image escape sequences "\I<x>,<y>,<url>"
+    let regex = /\\I(\d+),(\d+),([^\\]+)/g;
     let matches = [...input.matchAll(regex)];
     for (let match of matches) {
         try {
@@ -226,7 +226,8 @@ async function preprocessImages(input)
         let imgData = ctx.getImageData(x, y, img.width, img.height);
         let bitmap = imageDataToBitmap(imgData);
         let base64 = bitmapToBase64(bitmap);
-        input = input.replace(match[0], `\\b${x},${y},${img.width},${img.height},${base64}`);
+        // replace with "\i<x>,<y>,<width>,<height>,<base64_encoded_bitmap>"
+        input = input.replace(match[0], `\\i${x},${y},${img.width},${img.height},${base64}`);
     }
     console.log(input);
     return input;

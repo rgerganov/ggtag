@@ -53,7 +53,7 @@ void renderBits(const uint8_t *input, int bits_count)
                     text[i] = ch;
                 }
                 text[length] = 0;
-                printf("Render x=%d y=%d font=%d test=%s\n", x, y, fontNum, text);
+                printf("Render x=%d y=%d font=%d text=%s\n", x, y, fontNum, text);
                 sFONT* font = &Font8;
                 if (fontNum == 1) {
                     font = &Font12;
@@ -128,6 +128,26 @@ void renderBits(const uint8_t *input, int bits_count)
                 }
                 Paint_DrawQRCode(x, y, text, dot_pixel, BLACK);
                 free(text);
+                break;
+            }
+            case IMAGE_CMD: {
+                int x = br.read(X_BITS);
+                int y = br.read(Y_BITS);
+                int width = br.read(X_BITS);
+                int height = br.read(Y_BITS);
+                if (x < 0 || y < 0 || width < 0 || height < 0) {
+                    return;
+                }
+                printf("Render image x=%d y=%d width=%d height=%d\n", x, y, width, height);
+                for (int i = 0; i < height; i++) {
+                    for (int j = 0; j < width; j++) {
+                        int color = br.read(1);
+                        if (color < 0) {
+                            return;
+                        }
+                        Paint_SetPixel(x + j, y + i, color ? BLACK : WHITE);
+                    }
+                }
                 break;
             }
             default:

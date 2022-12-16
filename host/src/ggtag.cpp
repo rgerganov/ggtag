@@ -2,6 +2,7 @@
 #include <cstring>
 #include <cstdio>
 #include <cstdint>
+#include "utils.h"
 #include "protocol.h"
 #include "GUI_Paint.h"
 
@@ -31,6 +32,15 @@ struct LineCmd {
     int y1;
     int x2;
     int y2;
+};
+
+struct ImageCmd {
+    int x;
+    int y;
+    int width;
+    int height;
+    const char *b64_data;
+    int b64_data_len;
 };
 
 struct QRCodeCmd {
@@ -114,6 +124,45 @@ struct BitBuffer {
             }
             ptr++;
         }
+        return true;
+    }
+    bool addCmd(const ImageCmd &cmd)
+    {
+        if (!addBits(IMAGE_CMD, CMD_BITS)) {
+            return false;
+        }
+        if (!addBits(cmd.x, X_BITS)) {
+            return false;
+        }
+        if (!addBits(cmd.y, Y_BITS)) {
+            return false;
+        }
+        if (!addBits(cmd.width, X_BITS)) {
+            return false;
+        }
+        if (!addBits(cmd.height, Y_BITS)) {
+            return false;
+        }
+        int decoded_size = cmd.b64_data_len/4*3;
+        uint8_t *decoded = (uint8_t*) malloc(decoded_size);
+        if (!decoded) {
+            return false;
+        }
+        b64_decode((const uint8_t*)cmd.b64_data, cmd.b64_data_len, decoded);
+        int img_size = cmd.width * cmd.height;
+        for (int i = 0; i < img_size/8; i++) {
+            if (!addBits(decoded[i], 8)) {
+                free(decoded);
+                return false;
+            }
+        }
+        if (img_size % 8 != 0) {
+            if (!addBits(decoded[img_size/8], img_size % 8)) {
+                free(decoded);
+                return false;
+            }
+        }
+        free(decoded);
         return true;
     }
     bool addCmd(const QRCodeCmd &cmd)
@@ -255,6 +304,9 @@ bool parseCommand(const char *input, int *cmd, int *curr_offset)
         case 'q':
             *cmd = QRCODE_CMD;
             break;
+        case 'i':
+            *cmd = IMAGE_CMD;
+            break;
         default:
             return false;
     }
@@ -314,6 +366,49 @@ bool parseTextCmd(const char *input, TextCmd *cmd, int *curr_offset)
         }
         cmd->text_len++;
         offset++;
+    }
+    *curr_offset = offset;
+    return true;
+}
+
+bool parseImageCmd(const char *input, ImageCmd *cmd, int *curr_offset)
+{
+    int offset = *curr_offset;
+    if (!input[offset]) {
+        return false;
+    }
+    if (!parseInt(input, &cmd->x, &offset)) {
+        return false;
+    }
+    if (input[offset++] != ',') {
+        return false;
+    }
+    if (!parseInt(input, &cmd->y, &offset)) {
+        return false;
+    }
+    if (input[offset++] != ',') {
+        return false;
+    }
+    if (!parseInt(input, &cmd->width, &offset)) {
+        return false;
+    }
+    if (input[offset++] != ',') {
+        return false;
+    }
+    if (!parseInt(input, &cmd->height, &offset)) {
+        return false;
+    }
+    if (input[offset++] != ',') {
+        return false;
+    }
+    cmd->b64_data = input + offset;
+    cmd->b64_data_len = 0;
+    while (input[offset] != '\0' && input[offset] != '\\') {
+        cmd->b64_data_len++;
+        offset++;
+    }
+    if (cmd->b64_data_len % 4 != 0) {
+        return false;
     }
     *curr_offset = offset;
     return true;
@@ -510,6 +605,15 @@ bool parse(const char *input, BitBuffer *buf, int *curr_offset)
                 return false;
             }
             break;
+        case IMAGE_CMD:
+            ImageCmd image_cmd;
+            if (!parseImageCmd(input, &image_cmd, &offset)) {
+                return false;
+            }
+            if (!buf->addCmd(image_cmd)) {
+                return false;
+            }
+            break;
         case EOF_CMD:
             return true;
     }
@@ -580,5 +684,9 @@ int main(int argc, char *argv[])
     free(ptr);
     ptr = render(input, 250, 122);
     free(ptr);
+    const char *b64 = "aGVsbG8=";
+    uint8_t data[128] = {0};
+    b64_decode((const uint8_t*) b64, strlen(b64), data);
+    printf("Decoded data: %s\n", data);
     return 0;
 }
