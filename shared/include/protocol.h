@@ -24,7 +24,7 @@
 // bits for X coordinate
 #define X_BITS         9
 // bits for Y coordinate
-#define Y_BITS         9
+#define Y_BITS         8
 // bits for radius
 #define R_BITS         7
 // bits for length of text
