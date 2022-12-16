@@ -237,8 +237,8 @@ async function preprocessImages(input)
     const ctx = canvas.getContext("2d", {willReadFrequently: true});
     // find all image escape sequences "\I<x>,<y>,<url>"
     let regex = /\\I(\d+),(\d+),([^\\]+)/g;
-    let matches = [...input.matchAll(regex)];
-    for (let match of matches) {
+    let match = null;
+    while ((match = regex.exec(input)) !== null) {
         try {
             var img = await loadImage(match[3]);
         } catch (e) {
