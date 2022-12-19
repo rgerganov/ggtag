@@ -378,7 +378,7 @@ void run_from_battery()
                 EPD_Init();
                 Paint_NewImage(img, EPD_WIDTH, EPD_HEIGHT, 90, WHITE);
                 Paint_Clear(WHITE);
-                renderBits(data+1, data[0]*8);
+                renderBits(data+2, data[1]*8);
                 EPD_Display(img, NULL);
                 // put the display to sleep
                 EPD_Sleep();
