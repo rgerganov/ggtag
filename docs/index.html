@@ -33,12 +33,11 @@
       <label class="form-check-label" for="smallRadio">small</label>
     </div>
   </div>
-  <div class="row mb-3 ml-2">
+  <div class="row mb-3 ml-0">
     <canvas id="ggCanvas" width="360" height="240" style="border:2px solid #d3d3d3;">
       Your browser does not support the HTML canvas tag.
     </canvas>
   </div>
-
   <fieldset class="form-group">
     <div class="row">
       <legend class="col-form-label col-2">Interface:</legend>
@@ -97,6 +96,8 @@ programButton.addEventListener('click', async () => {
     }
     programButton.disabled = false;
 });
+let shareButton = document.getElementById('share');
+shareButton.addEventListener('click', onShare);
 Module['onRuntimeInitialized'] = onRuntimeInitialized;
 </script>
 <!-- jQuery first, then Popper.js, then Bootstrap JS -->

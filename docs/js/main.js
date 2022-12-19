@@ -20,6 +20,30 @@ function onRuntimeInitialized()
     document.getElementById("preview").click();
 }
 
+async function onShare() {
+    let inp = document.getElementById("inp").value;
+    let size = "l";
+    if (document.getElementById("smallRadio").checked) {
+        size = "s";
+    }
+    let url = window.location.origin + window.location.pathname + "?i=" + encodeURIComponent(inp) + "&s=" + size;
+    if (navigator.share) {
+        try {
+            let shareData = {
+                title: 'ggtag',
+                text: 'ggtag',
+                url: url,
+            };
+            await navigator.share(shareData);
+        } catch (e) {
+            console.log('Share failed: ' + e)
+        }
+    } else if (navigator.clipboard) {
+        // TODO: show tooltip indicating that the link was copied to clipboard
+        navigator.clipboard.writeText(url);
+    }
+}
+
 function changeSize(radio)
 {
     let canvas = document.getElementById("ggCanvas");
@@ -30,6 +54,7 @@ function changeSize(radio)
         canvas.width = 360;
         canvas.height = 240;
     }
+    document.getElementById("preview").click();
 }
 
 function render(input)
