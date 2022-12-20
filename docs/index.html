@@ -7,7 +7,14 @@
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
         <title>ggtag</title>
         <meta charset="utf-8">
-        <script>var exports = {};</script>
+        <script>
+          var exports = {};
+          var Module = typeof Module != 'undefined' ? Module : {};
+          Module['locateFile'] = function(path, prefix) {
+            // serve all wasm files from the "js" directory
+            return window.location.origin + window.location.pathname + "js/" + path;
+          }
+        </script>
         <script src="https://use.fontawesome.com/02c2083f80.js"></script>
         <!-- Implementation of WebSerial on top of WebUSB, needed for Android phones -->
         <script src="js/serial.js"></script>

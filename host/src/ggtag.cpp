@@ -5,6 +5,8 @@
 #include "utils.h"
 #include "protocol.h"
 #include "GUI_Paint.h"
+#define STB_TRUETYPE_IMPLEMENTATION
+#include "stb_truetype.h" /* http://nothings.org/stb/stb_truetype.h */
 
 struct TextCmd {
     int x;
@@ -667,6 +669,58 @@ extern "C" {
         Paint_NewImage(bitmap, width, height, 0, WHITE);
         Paint_Clear(WHITE);
         renderBits(buf.buffer, buf.ind);
+        return bitmap;
+    }
+
+    // Renders the specified codepoint on a 1D bitmap with size ceil(out_width*out_height/8).
+    // Caller is responsible for freeing the bitmap.
+    uint8_t* renderCodepoint(int codepoint, int height, int *out_width, int *out_height)
+    {
+        long size;
+        FILE* fontFile = fopen("host/fonts/fa-solid-900.ttf", "rb");
+        if (!fontFile) {
+            return 0;
+        }
+        fseek(fontFile, 0, SEEK_END);
+        size = ftell(fontFile);
+        fseek(fontFile, 0, SEEK_SET);
+
+        uint8_t *fontBuffer = (uint8_t*) malloc(size);
+        if (!fontBuffer) {
+            return 0;
+        }
+        fread(fontBuffer, size, 1, fontFile);
+        fclose(fontFile);
+
+        /* prepare font */
+        stbtt_fontinfo info;
+        if (!stbtt_InitFont(&info, fontBuffer, 0)) {
+            printf("failed to load ttf font\n");
+            free(fontBuffer);
+            return 0;
+        }
+        float scale = stbtt_ScaleForPixelHeight(&info, height);
+        int xoff, yoff;
+        uint8_t *bytemap = stbtt_GetCodepointBitmap(&info, scale, scale, codepoint, out_width, out_height, &xoff, &yoff);
+        if (!bytemap) {
+            free(fontBuffer);
+            return 0;
+        }
+        free(fontBuffer);
+        int bytemap_size = (*out_width) * (*out_height);
+        int bitmap_size = bytemap_size / 8;
+        if (bytemap_size % 8 != 0) {
+            bitmap_size += 1;
+        }
+        // convert grayscale bytemap to monochrome bitmap
+        uint8_t *bitmap = (uint8_t*) calloc(bitmap_size, 1);
+        for (int i = 0; i < bytemap_size; i++) {
+            int bit = bytemap[i] > 127 ? 1 : 0;
+            int byte_n = i / 8;
+            int bit_n = 7 - (i % 8);
+            bitmap[byte_n] |= bit << bit_n;
+        }
+        free(bytemap);
         return bitmap;
     }
 }
