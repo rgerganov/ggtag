@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include "protocol.h"
 #include "GUI_Paint.h"
+#define STB_TRUETYPE_IMPLEMENTATION
+#include "stb_truetype.h" /* http://nothings.org/stb/stb_truetype.h */
 
 struct BitReader {
     const uint8_t *buffer;
@@ -32,6 +34,38 @@ struct BitReader {
         return result;
     }
 };
+
+// Renders the specified codepoint on a 1D bitmap with size ceil(out_width*out_height/8).
+// Caller is responsible for freeing the bitmap.
+static uint8_t* renderCodepoint(int codepoint, int height, int *out_width, int *out_height)
+{
+    stbtt_fontinfo info;
+    if (!stbtt_InitFont(&info, fa_solid_900_ttf, 0)) {
+        printf("failed to load ttf font\n");
+        return 0;
+    }
+    float scale = stbtt_ScaleForPixelHeight(&info, height);
+    int xoff, yoff;
+    uint8_t *bytemap = stbtt_GetCodepointBitmap(&info, scale, scale, codepoint, out_width, out_height, &xoff, &yoff);
+    if (!bytemap) {
+        return 0;
+    }
+    int bytemap_size = (*out_width) * (*out_height);
+    int bitmap_size = bytemap_size / 8;
+    if (bytemap_size % 8 != 0) {
+        bitmap_size += 1;
+    }
+    // convert grayscale bytemap to monochrome bitmap
+    uint8_t *bitmap = (uint8_t*) calloc(bitmap_size, 1);
+    for (int i = 0; i < bytemap_size; i++) {
+        int bit = bytemap[i] > 127 ? 1 : 0;
+        int byte_n = i / 8;
+        int bit_n = 7 - (i % 8);
+        bitmap[byte_n] |= bit << bit_n;
+    }
+    free(bytemap);
+    return bitmap;
+}
 
 void renderBits(const uint8_t *input, int bits_count)
 {
@@ -148,6 +182,31 @@ void renderBits(const uint8_t *input, int bits_count)
                         Paint_SetPixel(x + j, y + i, color ? BLACK : WHITE);
                     }
                 }
+                break;
+            }
+            case ICON_CMD: {
+                int codepoint = br.read(ICON_BITS);
+                int x = br.read(X_BITS);
+                int y = br.read(Y_BITS);
+                int height = br.read(Y_BITS);
+                if (codepoint < 0 || x < 0 || y < 0 || height < 0) {
+                    return;
+                }
+                printf("Render icon codepoint=%x x=%d y=%d height=%d\n", codepoint, x, y, height);
+                int w, h;
+                uint8_t *cp = renderCodepoint(codepoint, height, &w, &h);
+                BitReader br(cp, w * h);
+                for (int i = 0; i < h; i++) {
+                    for (int j = 0; j < w; j++) {
+                        int color = br.read(1);
+                        if (color < 0) {
+                            free(cp);
+                            return;
+                        }
+                        Paint_SetPixel(x + j, y + i, color ? BLACK : WHITE);
+                    }
+                }
+                free(cp);
                 break;
             }
             default:

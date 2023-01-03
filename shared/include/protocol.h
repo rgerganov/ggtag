@@ -14,8 +14,10 @@
 #define QRCODE_CMD   4
 // draw image command
 #define IMAGE_CMD    5
+// draw font awesome icon
+#define ICON_CMD     6
 
-#define EOF_CMD      6
+#define EOF_CMD      7
 
 // bits for command
 #define CMD_BITS       4
@@ -33,6 +35,8 @@
 #define CHAR_BITS      7
 // bits for qrcode pixel width
 #define QR_PIXEL_WIDTH 2
+// bits for icon codepoint
+#define ICON_BITS      16
 
 extern "C" {
 void renderBits(const uint8_t *input, int bits_count);

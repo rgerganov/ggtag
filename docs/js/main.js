@@ -258,39 +258,11 @@ const loadImage = (url) => new Promise((resolve, reject) => {
 
 async function preprocessImages(input)
 {
-    // find all FontAwesome escape sequences "\A<x>,<y>,<height>,<codepoint>"
-    let regex = /\\A(\d+),(\d+),(\d+),([^\\]+)/g;
-    let match = null;
-    while ((match = regex.exec(input)) !== null) {
-        let x = Number(match[1]);
-        let y = Number(match[2]);
-        let height = Number(match[3]);
-        let codepoint = Number(match[4]);
-        let widthPtr = Module._malloc(4);
-        let heightPtr = Module._malloc(4);
-        let ptr = Module.ccall('renderCodepoint', 'number', ['number', 'number', 'number'], [codepoint, height, widthPtr, heightPtr]);
-        if (ptr == 0) {
-            console.log("Failed to render codepoint " + codepoint);
-            Module._free(widthPtr);
-            Module._free(heightPtr);
-            continue;
-        }
-        let width = Module.getValue(widthPtr, 'i32');
-        height = Module.getValue(heightPtr, 'i32');
-        Module._free(widthPtr);
-        Module._free(heightPtr);
-        console.log("Codepoint width: " + width + ", height: " + height);
-        let bitmap = new Uint8Array(Module.HEAPU8.buffer, ptr, Math.ceil(width*height/8));
-        let base64 = bitmapToBase64(bitmap);
-        // replace with "\i<x>,<y>,<width>,<height>,<base64_encoded_bitmap>"
-        input = input.replace(match[0], `\\i${x},${y},${width},${height},${base64}`);
-        Module._free(ptr);
-    }
     const canvas = document.getElementById("ggCanvas");
     const ctx = canvas.getContext("2d", {willReadFrequently: true});
     // find all image escape sequences "\I<x>,<y>,<url>"
-    regex = /\\I(\d+),(\d+),([^\\]+)/g;
-    match = null;
+    let regex = /\\I(\d+),(\d+),([^\\]+)/g;
+    let match = null;
     while ((match = regex.exec(input)) !== null) {
         try {
             var img = await loadImage(match[3]);

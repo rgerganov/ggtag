@@ -5,8 +5,6 @@
 #include "utils.h"
 #include "protocol.h"
 #include "GUI_Paint.h"
-#define STB_TRUETYPE_IMPLEMENTATION
-#include "stb_truetype.h" /* http://nothings.org/stb/stb_truetype.h */
 
 struct TextCmd {
     int x;
@@ -43,6 +41,13 @@ struct ImageCmd {
     int height;
     const char *b64_data;
     int b64_data_len;
+};
+
+struct IconCmd {
+    int codepoint;
+    int x;
+    int y;
+    int height;
 };
 
 struct QRCodeCmd {
@@ -165,6 +170,25 @@ struct BitBuffer {
             }
         }
         free(decoded);
+        return true;
+    }
+    bool addCmd(const IconCmd &cmd)
+    {
+        if (!addBits(ICON_CMD, CMD_BITS)) {
+            return false;
+        }
+        if (!addBits(cmd.codepoint, ICON_BITS)) {
+            return false;
+        }
+        if (!addBits(cmd.x, X_BITS)) {
+            return false;
+        }
+        if (!addBits(cmd.y, Y_BITS)) {
+            return false;
+        }
+        if (!addBits(cmd.height, Y_BITS)) {
+            return false;
+        }
         return true;
     }
     bool addCmd(const QRCodeCmd &cmd)
@@ -309,6 +333,9 @@ bool parseCommand(const char *input, int *cmd, int *curr_offset)
         case 'i':
             *cmd = IMAGE_CMD;
             break;
+        case 'a':
+            *cmd = ICON_CMD;
+            break;
         default:
             return false;
     }
@@ -410,6 +437,37 @@ bool parseImageCmd(const char *input, ImageCmd *cmd, int *curr_offset)
         offset++;
     }
     if (cmd->b64_data_len % 4 != 0) {
+        return false;
+    }
+    *curr_offset = offset;
+    return true;
+}
+
+bool parseIconCmd(const char *input, IconCmd *cmd, int *curr_offset)
+{
+    int offset = *curr_offset;
+    if (!input[offset]) {
+        return false;
+    }
+    if (!parseInt(input, &cmd->codepoint, &offset)) {
+        return false;
+    }
+    if (input[offset++] != ',') {
+        return false;
+    }
+    if (!parseInt(input, &cmd->x, &offset)) {
+        return false;
+    }
+    if (input[offset++] != ',') {
+        return false;
+    }
+    if (!parseInt(input, &cmd->y, &offset)) {
+        return false;
+    }
+    if (input[offset++] != ',') {
+        return false;
+    }
+    if (!parseInt(input, &cmd->height, &offset)) {
         return false;
     }
     *curr_offset = offset;
@@ -616,6 +674,15 @@ bool parse(const char *input, BitBuffer *buf, int *curr_offset)
                 return false;
             }
             break;
+        case ICON_CMD:
+            IconCmd icon_cmd;
+            if (!parseIconCmd(input, &icon_cmd, &offset)) {
+                return false;
+            }
+            if (!buf->addCmd(icon_cmd)) {
+                return false;
+            }
+            break;
         case EOF_CMD:
             return true;
     }
@@ -671,64 +738,12 @@ extern "C" {
         renderBits(buf.buffer, buf.ind);
         return bitmap;
     }
-
-    // Renders the specified codepoint on a 1D bitmap with size ceil(out_width*out_height/8).
-    // Caller is responsible for freeing the bitmap.
-    uint8_t* renderCodepoint(int codepoint, int height, int *out_width, int *out_height)
-    {
-        long size;
-        FILE* fontFile = fopen("host/fonts/fa-solid-900.ttf", "rb");
-        if (!fontFile) {
-            return 0;
-        }
-        fseek(fontFile, 0, SEEK_END);
-        size = ftell(fontFile);
-        fseek(fontFile, 0, SEEK_SET);
-
-        uint8_t *fontBuffer = (uint8_t*) malloc(size);
-        if (!fontBuffer) {
-            return 0;
-        }
-        fread(fontBuffer, size, 1, fontFile);
-        fclose(fontFile);
-
-        /* prepare font */
-        stbtt_fontinfo info;
-        if (!stbtt_InitFont(&info, fontBuffer, 0)) {
-            printf("failed to load ttf font\n");
-            free(fontBuffer);
-            return 0;
-        }
-        float scale = stbtt_ScaleForPixelHeight(&info, height);
-        int xoff, yoff;
-        uint8_t *bytemap = stbtt_GetCodepointBitmap(&info, scale, scale, codepoint, out_width, out_height, &xoff, &yoff);
-        if (!bytemap) {
-            free(fontBuffer);
-            return 0;
-        }
-        free(fontBuffer);
-        int bytemap_size = (*out_width) * (*out_height);
-        int bitmap_size = bytemap_size / 8;
-        if (bytemap_size % 8 != 0) {
-            bitmap_size += 1;
-        }
-        // convert grayscale bytemap to monochrome bitmap
-        uint8_t *bitmap = (uint8_t*) calloc(bitmap_size, 1);
-        for (int i = 0; i < bytemap_size; i++) {
-            int bit = bytemap[i] > 127 ? 1 : 0;
-            int byte_n = i / 8;
-            int bit_n = 7 - (i % 8);
-            bitmap[byte_n] |= bit << bit_n;
-        }
-        free(bytemap);
-        return bitmap;
-    }
 }
 
 int main(int argc, char *argv[])
 {
     int len;
-    const char *input = "\\t1,30,10,Hello world\\t2,40,30,ggtag\\t3,50,103,LZ2RZG";
+    const char *input = "\\t1,30,10,Hello world\\t2,40,30,ggtag\\t3,50,103,LZ2RZG\\a63357,10,10,50";
     uint8_t *ptr = encode(input, &len);
     printf("Encoded data length: %d\n", len);
     printf("Encoded data: ");
