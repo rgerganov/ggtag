@@ -15,13 +15,62 @@ function onRuntimeInitialized()
     }
     let input = params.i;
     if (input) {
-        document.getElementById("inp").value = decodeURI(input);
+        // TODO
+        //document.getElementById("inp").value = decodeURI(input);
     }
-    document.getElementById("preview").click();
+    //document.getElementById("preview").click();
+    repaint();
+}
+
+function getInput() {
+    let inp = "";
+    let cmdToEsc = {"Text":      "\\t",
+                    "Circle":    "\\c",
+                    "Rectangle": "\\r",
+                    "Line":      "\\l",
+                    "QR code":   "\\q",
+                    "Image":     "\\I",
+                    "Icon":      "\\a"}
+    $('#cmdContainer').children().each(function () {
+        let cmd = $(this).find("button").text();
+        let text = $(this).find("input[type=text]").val();
+        inp += cmdToEsc[cmd] + text;
+    });
+    return inp;
+}
+
+async function repaint() {
+    let inp = getInput();
+    inp = await preprocessImages(inp);
+    //console.log(inp);
+    render(inp);
+}
+
+function onCmdChange() {
+    $(this).parent().parent().find("button").text($(this).text());
+    repaint();
+}
+
+function onDelete() {
+    let thisRow = $(this).parent().parent().parent();
+    if (thisRow.parent().children().length > 1) {
+        thisRow.remove();
+    }
+    repaint();
+}
+
+function onAdd() {
+    let newElement = $(this).parent().parent().parent().clone()
+    newElement.find(".dropdown-item").click(onCmdChange);
+    newElement.find(".fa-plus").parent().click(onAdd);
+    newElement.find(".fa-trash").parent().click(onDelete);
+    newElement.find("input[type=text]").focusout(repaint);
+    newElement.insertAfter($(this).parent().parent().parent());
+    repaint();
 }
 
 async function onShare() {
-    let inp = document.getElementById("inp").value;
+    let inp = getInput();
     let size = "l";
     if (document.getElementById("smallRadio").checked) {
         size = "s";
@@ -39,7 +88,6 @@ async function onShare() {
             console.log('Share failed: ' + e)
         }
     } else if (navigator.clipboard) {
-        // TODO: show tooltip indicating that the link was copied to clipboard
         navigator.clipboard.writeText(url);
     }
 }
@@ -54,7 +102,7 @@ function changeSize(radio)
         canvas.width = 360;
         canvas.height = 240;
     }
-    document.getElementById("preview").click();
+    repaint();
 }
 
 function render(input)
