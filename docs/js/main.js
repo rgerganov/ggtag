@@ -56,6 +56,7 @@ function onRuntimeInitialized()
             newCmd.find(".dropdown-item").click(onCmdChange);
             newCmd.find(".fa-plus").parent().click(onAdd);
             newCmd.find(".fa-trash").parent().click(onDelete);
+            newCmd.find("input[type=text]").keypress(onKeypress);
             newCmd.find("input[type=text]").focusout(repaint);
             newCmd.insertAfter($(firstCmd));
         }
@@ -107,9 +108,16 @@ function onAdd() {
     newCmd.find(".dropdown-item").click(onCmdChange);
     newCmd.find(".fa-plus").parent().click(onAdd);
     newCmd.find(".fa-trash").parent().click(onDelete);
+    newCmd.find("input[type=text]").keypress(onKeypress);
     newCmd.find("input[type=text]").focusout(repaint);
     newCmd.insertAfter($(this).parent().parent().parent());
     repaint();
+}
+
+function onKeypress(event) {
+    if (event.keyCode == 13) {
+        repaint();
+    }
 }
 
 async function onShare() {

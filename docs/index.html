@@ -130,6 +130,7 @@ if (!navigator.share) {
 $(".fa-plus").parent().click(onAdd);
 $(".fa-trash").parent().click(onDelete);
 $(".dropdown-item").click(onCmdChange);
+$("input[type=text]").keypress(onKeypress);
 $("input[type=text]").focusout(repaint);
 
 Module['onRuntimeInitialized'] = onRuntimeInitialized;
