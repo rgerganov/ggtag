@@ -1,5 +1,38 @@
 "use strict";
 
+const ESC2CMD = {"\\t": "Text",
+                 "\\c": "Circle",
+                 "\\r": "Rectangle",
+                 "\\l": "Line",
+                 "\\q": "QR code",
+                 "\\I": "Image",
+                 "\\a": "Icon"}
+
+const CMD2ESC = {"Text":      "\\t",
+                 "Circle":    "\\c",
+                 "Rectangle": "\\r",
+                 "Line":      "\\l",
+                 "QR code":   "\\q",
+                 "Image":     "\\I",
+                 "Icon":      "\\a"}
+
+function splitCommands(input) {
+    let cmds = [];
+    let lastIdx = 0;
+    for (let i = 1; i < input.length - 1; i++) {
+        if (input[i] == "\\") {
+            if (input[i + 1] != "\\") {
+                cmds.push(input.substring(lastIdx, i));
+                lastIdx = i;
+            } else {
+                i++;
+            }
+        }
+    }
+    cmds.push(input.substring(lastIdx));
+    return cmds;
+}
+
 function onRuntimeInitialized()
 {
     const params = new Proxy(new URLSearchParams(window.location.search), {
@@ -7,34 +40,42 @@ function onRuntimeInitialized()
     });
     let value = params.s;
     if (value === "s") {
-        changeSize(document.getElementById("smallRadio"));
+        changeSize(document.getElementById("smallRadio"), false);
         document.getElementById("smallRadio").checked = true;
     } else if (value === "l") {
-        changeSize(document.getElementById("largeRadio"));
+        changeSize(document.getElementById("largeRadio"), false);
         document.getElementById("largeRadio").checked = true;
     }
     let input = params.i;
     if (input) {
-        // TODO
-        //document.getElementById("inp").value = decodeURI(input);
+        let cmds = splitCommands(input)
+        let addCount = cmds.length - 1;
+        let firstCmd = $('#cmdContainer').children()[0];
+        for (let i = 0; i < addCount; i++) {
+            let newCmd = $(firstCmd).clone()
+            newCmd.find(".dropdown-item").click(onCmdChange);
+            newCmd.find(".fa-plus").parent().click(onAdd);
+            newCmd.find(".fa-trash").parent().click(onDelete);
+            newCmd.find("input[type=text]").focusout(repaint);
+            newCmd.insertAfter($(firstCmd));
+        }
+        for (let i = 0; i < cmds.length; i++) {
+            let cmd = ESC2CMD[cmds[i].substring(0, 2)];
+            let text = cmds[i].substring(2);
+            let row = $('#cmdContainer').children()[i];
+            $(row).find("button").text(cmd);
+            $(row).find("input[type=text]").val(text);
+        }
     }
-    //document.getElementById("preview").click();
     repaint();
 }
 
 function getInput() {
     let inp = "";
-    let cmdToEsc = {"Text":      "\\t",
-                    "Circle":    "\\c",
-                    "Rectangle": "\\r",
-                    "Line":      "\\l",
-                    "QR code":   "\\q",
-                    "Image":     "\\I",
-                    "Icon":      "\\a"}
     $('#cmdContainer').children().each(function () {
         let cmd = $(this).find("button").text();
         let text = $(this).find("input[type=text]").val();
-        inp += cmdToEsc[cmd] + text;
+        inp += CMD2ESC[cmd] + text;
     });
     return inp;
 }
@@ -60,12 +101,12 @@ function onDelete() {
 }
 
 function onAdd() {
-    let newElement = $(this).parent().parent().parent().clone()
-    newElement.find(".dropdown-item").click(onCmdChange);
-    newElement.find(".fa-plus").parent().click(onAdd);
-    newElement.find(".fa-trash").parent().click(onDelete);
-    newElement.find("input[type=text]").focusout(repaint);
-    newElement.insertAfter($(this).parent().parent().parent());
+    let newCmd = $(this).parent().parent().parent().clone()
+    newCmd.find(".dropdown-item").click(onCmdChange);
+    newCmd.find(".fa-plus").parent().click(onAdd);
+    newCmd.find(".fa-trash").parent().click(onDelete);
+    newCmd.find("input[type=text]").focusout(repaint);
+    newCmd.insertAfter($(this).parent().parent().parent());
     repaint();
 }
 
@@ -92,7 +133,7 @@ async function onShare() {
     }
 }
 
-function changeSize(radio)
+function changeSize(radio, doRepaint=true)
 {
     let canvas = document.getElementById("ggCanvas");
     if (radio.value == "small") {
@@ -102,7 +143,9 @@ function changeSize(radio)
         canvas.width = 360;
         canvas.height = 240;
     }
-    repaint();
+    if (doRepaint) {
+        repaint();
+    }
 }
 
 function render(input)
@@ -327,6 +370,6 @@ async function preprocessImages(input)
         // replace with "\i<x>,<y>,<width>,<height>,<base64_encoded_bitmap>"
         input = input.replace(match[0], `\\i${x},${y},${img.width},${img.height},${base64}`);
     }
-    console.log(input);
+    //console.log(input);
     return input;
 }
