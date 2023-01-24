@@ -62,6 +62,7 @@ function onRuntimeInitialized()
         for (let i = 0; i < cmds.length; i++) {
             let cmd = ESC2CMD[cmds[i].substring(0, 2)];
             let text = cmds[i].substring(2);
+            text = text.replace(/\\\\/g, "\\");
             let row = $('#cmdContainer').children()[i];
             $(row).find("button").text(cmd);
             $(row).find("input[type=text]").val(text);
@@ -75,6 +76,7 @@ function getInput() {
     $('#cmdContainer').children().each(function () {
         let cmd = $(this).find("button").text();
         let text = $(this).find("input[type=text]").val();
+        text = text.replace(/\\/g, "\\\\");
         inp += CMD2ESC[cmd] + text;
     });
     return inp;
