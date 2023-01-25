@@ -74,9 +74,9 @@ void renderBits(const uint8_t *input, int bits_count)
         int cmd = br.read(CMD_BITS);
         switch (cmd) {
             case TEXT_CMD: {
-                int fontNum = br.read(FONT_BITS);
                 int x = br.read(X_BITS);
                 int y = br.read(Y_BITS);
+                int fontNum = br.read(FONT_BITS);
                 int length = br.read(LENGTH_BITS);
                 if (fontNum < 0 || x < 0 || y < 0 || length < 0) {
                     return;
@@ -103,15 +103,15 @@ void renderBits(const uint8_t *input, int bits_count)
                 break;
             }
             case RECT_CMD: {
-                int x1 = br.read(X_BITS);
-                int y1 = br.read(Y_BITS);
-                int x2 = br.read(X_BITS);
-                int y2 = br.read(Y_BITS);
-                if (x1 < 0 || y1 < 0 || x2 < 0 || y2 < 0) {
+                int x = br.read(X_BITS);
+                int y = br.read(Y_BITS);
+                int w = br.read(X_BITS);
+                int h = br.read(Y_BITS);
+                if (x < 0 || y < 0 || w < 0 || h < 0) {
                     return;
                 }
-                printf("Render rect x1=%d y1=%d x2=%d y2=%d\n", x1, y1, x2, y2);
-                Paint_DrawRectangle(x1, y1, x2, y2, BLACK, DOT_PIXEL_1X1, DRAW_FILL_EMPTY);
+                printf("Render rect x=%d y=%d w=%d h=%d\n", x, y, w, h);
+                Paint_DrawRectangle(x, y, x+w, y+h, BLACK, DOT_PIXEL_1X1, DRAW_FILL_EMPTY);
                 break;
             }
             case CIRCLE_CMD: {
@@ -138,9 +138,9 @@ void renderBits(const uint8_t *input, int bits_count)
                 break;
             }
             case QRCODE_CMD: {
-                int pixel_width = br.read(QR_PIXEL_WIDTH);
                 int x = br.read(X_BITS);
                 int y = br.read(Y_BITS);
+                int pixel_width = br.read(QR_PIXEL_WIDTH);
                 int length = br.read(LENGTH_BITS);
                 if (x < 0 || y < 0 || length < 0) {
                     return;
@@ -185,10 +185,10 @@ void renderBits(const uint8_t *input, int bits_count)
                 break;
             }
             case ICON_CMD: {
-                int codepoint = br.read(ICON_BITS);
                 int x = br.read(X_BITS);
                 int y = br.read(Y_BITS);
                 int height = br.read(Y_BITS);
+                int codepoint = br.read(ICON_BITS);
                 if (codepoint < 0 || x < 0 || y < 0 || height < 0) {
                     return;
                 }

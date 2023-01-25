@@ -15,10 +15,10 @@ struct TextCmd {
 };
 
 struct RectCmd {
-    int x1;
-    int y1;
-    int x2;
-    int y2;
+    int x;
+    int y;
+    int width;
+    int height;
 };
 
 struct CircleCmd {
@@ -108,14 +108,14 @@ struct BitBuffer {
         if (!addBits(TEXT_CMD, CMD_BITS)) {
             return false;
         }
-        // font numbers are zero-based
-        if (!addBits(cmd.font-1, FONT_BITS)) {
-            return false;
-        }
         if (!addBits(cmd.x, X_BITS)) {
             return false;
         }
         if (!addBits(cmd.y, Y_BITS)) {
+            return false;
+        }
+        // font numbers are zero-based
+        if (!addBits(cmd.font-1, FONT_BITS)) {
             return false;
         }
         if (!addBits(cmd.text_len, LENGTH_BITS)) {
@@ -177,9 +177,6 @@ struct BitBuffer {
         if (!addBits(ICON_CMD, CMD_BITS)) {
             return false;
         }
-        if (!addBits(cmd.codepoint, ICON_BITS)) {
-            return false;
-        }
         if (!addBits(cmd.x, X_BITS)) {
             return false;
         }
@@ -189,6 +186,9 @@ struct BitBuffer {
         if (!addBits(cmd.height, Y_BITS)) {
             return false;
         }
+        if (!addBits(cmd.codepoint, ICON_BITS)) {
+            return false;
+        }
         return true;
     }
     bool addCmd(const QRCodeCmd &cmd)
@@ -196,14 +196,14 @@ struct BitBuffer {
         if (!addBits(QRCODE_CMD, CMD_BITS)) {
             return false;
         }
-        // pixel_width is zero-based
-        if (!addBits(cmd.pixel_width-1, QR_PIXEL_WIDTH)) {
-            return false;
-        }
         if (!addBits(cmd.x, X_BITS)) {
             return false;
         }
         if (!addBits(cmd.y, Y_BITS)) {
+            return false;
+        }
+        // pixel_width is zero-based
+        if (!addBits(cmd.pixel_width-1, QR_PIXEL_WIDTH)) {
             return false;
         }
         if (!addBits(cmd.text_len, LENGTH_BITS)) {
@@ -226,16 +226,16 @@ struct BitBuffer {
         if (!addBits(RECT_CMD, CMD_BITS)) {
             return false;
         }
-        if (!addBits(cmd.x1, X_BITS)) {
+        if (!addBits(cmd.x, X_BITS)) {
             return false;
         }
-        if (!addBits(cmd.y1, Y_BITS)) {
+        if (!addBits(cmd.y, Y_BITS)) {
             return false;
         }
-        if (!addBits(cmd.x2, X_BITS)) {
+        if (!addBits(cmd.width, X_BITS)) {
             return false;
         }
-        if (!addBits(cmd.y2, Y_BITS)) {
+        if (!addBits(cmd.height, Y_BITS)) {
             return false;
         }
         return true;
@@ -359,16 +359,11 @@ bool parseInt(const char *input, int *value, int *curr_offset)
     return true;
 }
 
+// TextCommand: <x>,<y>,<font_num>,<text>
 bool parseTextCmd(const char *input, TextCmd *cmd, int *curr_offset)
 {
     int offset = *curr_offset;
     if (!input[offset]) {
-        return false;
-    }
-    if (!parseInt(input, &cmd->font, &offset)) {
-        return false;
-    }
-    if (input[offset++] != ',') {
         return false;
     }
     if (!parseInt(input, &cmd->x, &offset)) {
@@ -378,6 +373,12 @@ bool parseTextCmd(const char *input, TextCmd *cmd, int *curr_offset)
         return false;
     }
     if (!parseInt(input, &cmd->y, &offset)) {
+        return false;
+    }
+    if (input[offset++] != ',') {
+        return false;
+    }
+    if (!parseInt(input, &cmd->font, &offset)) {
         return false;
     }
     if (input[offset++] != ',') {
@@ -400,6 +401,7 @@ bool parseTextCmd(const char *input, TextCmd *cmd, int *curr_offset)
     return true;
 }
 
+// ImageCommand: <x>,<y>,<width>,<height>,<base64data>
 bool parseImageCmd(const char *input, ImageCmd *cmd, int *curr_offset)
 {
     int offset = *curr_offset;
@@ -443,16 +445,11 @@ bool parseImageCmd(const char *input, ImageCmd *cmd, int *curr_offset)
     return true;
 }
 
+// IconCommand: <x>,<y>,<height>,<codepoint>
 bool parseIconCmd(const char *input, IconCmd *cmd, int *curr_offset)
 {
     int offset = *curr_offset;
     if (!input[offset]) {
-        return false;
-    }
-    if (!parseInt(input, &cmd->codepoint, &offset)) {
-        return false;
-    }
-    if (input[offset++] != ',') {
         return false;
     }
     if (!parseInt(input, &cmd->x, &offset)) {
@@ -470,20 +467,21 @@ bool parseIconCmd(const char *input, IconCmd *cmd, int *curr_offset)
     if (!parseInt(input, &cmd->height, &offset)) {
         return false;
     }
+    if (input[offset++] != ',') {
+        return false;
+    }
+    if (!parseInt(input, &cmd->codepoint, &offset)) {
+        return false;
+    }
     *curr_offset = offset;
     return true;
 }
 
+// QRCodeCommand: <x>,<y>,<pixel_width>,<text>
 bool parseQRCodeCmd(const char *input, QRCodeCmd *cmd, int *curr_offset)
 {
     int offset = *curr_offset;
     if (!input[offset]) {
-        return false;
-    }
-    if (!parseInt(input, &cmd->pixel_width, &offset)) {
-        return false;
-    }
-    if (input[offset++] != ',') {
         return false;
     }
     if (!parseInt(input, &cmd->x, &offset)) {
@@ -493,6 +491,12 @@ bool parseQRCodeCmd(const char *input, QRCodeCmd *cmd, int *curr_offset)
         return false;
     }
     if (!parseInt(input, &cmd->y, &offset)) {
+        return false;
+    }
+    if (input[offset++] != ',') {
+        return false;
+    }
+    if (!parseInt(input, &cmd->pixel_width, &offset)) {
         return false;
     }
     if (input[offset++] != ',') {
@@ -515,37 +519,39 @@ bool parseQRCodeCmd(const char *input, QRCodeCmd *cmd, int *curr_offset)
     return true;
 }
 
+// RectCommand: <x>,<y>,<width>,<height>
 bool parseRectCmd(const char *input, RectCmd *cmd, int *curr_offset)
 {
     int offset = *curr_offset;
     if (!input[offset]) {
         return false;
     }
-    if (!parseInt(input, &cmd->x1, &offset)) {
+    if (!parseInt(input, &cmd->x, &offset)) {
         return false;
     }
     if (input[offset++] != ',') {
         return false;
     }
-    if (!parseInt(input, &cmd->y1, &offset)) {
+    if (!parseInt(input, &cmd->y, &offset)) {
         return false;
     }
     if (input[offset++] != ',') {
         return false;
     }
-    if (!parseInt(input, &cmd->x2, &offset)) {
+    if (!parseInt(input, &cmd->width, &offset)) {
         return false;
     }
     if (input[offset++] != ',') {
         return false;
     }
-    if (!parseInt(input, &cmd->y2, &offset)) {
+    if (!parseInt(input, &cmd->height, &offset)) {
         return false;
     }
     *curr_offset = offset;
     return true;
 }
 
+// CircleCommand: <x>,<y>,<radius>
 bool parseCircleCmd(const char *input, CircleCmd *cmd, int *curr_offset)
 {
     int offset = *curr_offset;
@@ -571,6 +577,7 @@ bool parseCircleCmd(const char *input, CircleCmd *cmd, int *curr_offset)
     return true;
 }
 
+// LineCommand: <x1>,<y1>,<x2>,<y2>
 bool parseLineCmd(const char *input, LineCmd *cmd, int *curr_offset)
 {
     int offset = *curr_offset;
