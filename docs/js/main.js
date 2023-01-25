@@ -90,9 +90,59 @@ async function repaint() {
     render(inp);
 }
 
+function randomInt(min, max) {
+    // min and max included
+    return Math.floor(Math.random() * (max - min + 1) + min)
+}
+
+function randomWord() {
+    let words = ["foo", "bar", "spam", "eggs", "Hello", "ggtag"];
+    return words[randomInt(0, words.length - 1)];
+}
+
+function randomIcon() {
+    let codepoints = ["f5e4", "f188", "f0f9", "f521", "f52f", "f2fe"];
+    return codepoints[randomInt(0, codepoints.length - 1)];
+}
+
 function onCmdChange() {
-    $(this).parent().parent().find("button").text($(this).text());
-    repaint();
+    let newCmd = $(this).text();
+    let curr = $(this).parent().parent().parent();
+    let prevCmd = $(curr).find("button").text();
+    let prevText = $(curr).find("input[type=text]").val();
+    if (newCmd != prevCmd) {
+        let parts = prevText.split(",");
+        let x = randomInt(1, 100);
+        let y = randomInt(1, 100);
+        if (parts.length > 1) {
+            // keep the old coordinates if possible
+            x = parseInt(parts[0]);
+            y = parseInt(parts[1]);
+        }
+        let remaining = "";
+        if (newCmd == "Text") {
+            let fontNum = randomInt(1, 5);
+            remaining = fontNum + "," + randomWord();
+        } else if (newCmd == "Circle") {
+            // random radius
+            remaining = randomInt(10, 50);
+        } else if (newCmd == "Rectangle") {
+            // random width and height
+            remaining = randomInt(20, 60) + "," + randomInt(20, 60);
+        } else if (newCmd == "Line") {
+            // random end point
+            remaining = randomInt(1, 100) + "," + randomInt(1, 100);
+        } else if (newCmd == "QR code") {
+            remaining = randomInt(1, 4) + "," + randomWord();
+        } else if (newCmd == "Image") {
+            remaining = "https://xakcop.com/doomface.png";
+        } else if (newCmd == "Icon") {
+            remaining = randomInt(16,40) + "," + randomIcon();
+        }
+        $(curr).find("button").text(newCmd);
+        $(curr).find("input[type=text]").val(x+","+y+","+remaining);
+        repaint();
+    }
 }
 
 function onDelete() {
