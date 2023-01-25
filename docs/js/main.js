@@ -112,8 +112,8 @@ function onCmdChange() {
     let prevText = $(curr).find("input[type=text]").val();
     if (newCmd != prevCmd) {
         let parts = prevText.split(",");
-        let x = randomInt(1, 100);
-        let y = randomInt(1, 100);
+        let x = randomInt(0, 100);
+        let y = randomInt(0, 100);
         if (parts.length > 1) {
             // keep the old coordinates if possible
             x = parseInt(parts[0]);
@@ -131,7 +131,7 @@ function onCmdChange() {
             remaining = randomInt(20, 60) + "," + randomInt(20, 60);
         } else if (newCmd == "Line") {
             // random end point
-            remaining = randomInt(1, 100) + "," + randomInt(1, 100);
+            remaining = randomInt(0, 100) + "," + randomInt(0, 100);
         } else if (newCmd == "QR code") {
             remaining = randomInt(1, 4) + "," + randomWord();
         } else if (newCmd == "Image") {
@@ -146,21 +146,30 @@ function onCmdChange() {
 }
 
 function onDelete() {
-    let thisRow = $(this).parent().parent().parent();
-    if (thisRow.parent().children().length > 1) {
-        thisRow.remove();
+    let currRow = $(this).parent().parent().parent();
+    if (currRow.parent().children().length > 1) {
+        currRow.remove();
     }
     repaint();
 }
 
 function onAdd() {
-    let newCmd = $(this).parent().parent().parent().clone()
-    newCmd.find(".dropdown-item").click(onCmdChange);
-    newCmd.find(".fa-plus").parent().click(onAdd);
-    newCmd.find(".fa-trash").parent().click(onDelete);
-    newCmd.find("input[type=text]").keypress(onKeypress);
-    newCmd.find("input[type=text]").focusout(repaint);
-    newCmd.insertAfter($(this).parent().parent().parent());
+    let currRow = $(this).parent().parent().parent();
+    let currText = $(currRow).find("input[type=text]").val();
+    // clone the preivous row and only change the (X,Y) coordinates
+    let parts = currText.split(",");
+    if (parts.length > 1) {
+        parts[0] = randomInt(0, 100);
+        parts[1] = randomInt(0, 100);
+    }
+    let newRow = $(currRow).clone()
+    newRow.find(".dropdown-item").click(onCmdChange);
+    newRow.find(".fa-plus").parent().click(onAdd);
+    newRow.find(".fa-trash").parent().click(onDelete);
+    newRow.find("input[type=text]").val(parts.join(","));
+    newRow.find("input[type=text]").keypress(onKeypress);
+    newRow.find("input[type=text]").focusout(repaint);
+    newRow.insertAfter($(currRow));
     repaint();
 }
 
