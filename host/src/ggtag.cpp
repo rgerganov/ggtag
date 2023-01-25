@@ -359,6 +359,32 @@ bool parseInt(const char *input, int *value, int *curr_offset)
     return true;
 }
 
+bool parseHex(const char *input, int *value, int *curr_offset)
+{
+    int offset = *curr_offset;
+    if (!input[offset]) {
+        return false;
+    }
+    int ret = 0;
+    while ((input[offset] >= '0' && input[offset] <= '9') ||
+           (input[offset] >= 'a' && input[offset] <= 'f') ||
+           (input[offset] >= 'A' && input[offset] <= 'F')) {
+        int v = 0;
+        if (input[offset] >= '0' && input[offset] <= '9') {
+            v = input[offset] - '0';
+        } else if (input[offset] >= 'a' && input[offset] <= 'f') {
+            v = input[offset] - 'a' + 10;
+        } else if (input[offset] >= 'A' && input[offset] <= 'F') {
+            v = input[offset] - 'A' + 10;
+        }
+        ret = ret * 16 + v;
+        offset++;
+    }
+    *value = ret;
+    *curr_offset = offset;
+    return true;
+}
+
 // TextCommand: <x>,<y>,<font_num>,<text>
 bool parseTextCmd(const char *input, TextCmd *cmd, int *curr_offset)
 {
@@ -445,7 +471,7 @@ bool parseImageCmd(const char *input, ImageCmd *cmd, int *curr_offset)
     return true;
 }
 
-// IconCommand: <x>,<y>,<height>,<codepoint>
+// IconCommand: <x>,<y>,<height>,<hex_codepoint>
 bool parseIconCmd(const char *input, IconCmd *cmd, int *curr_offset)
 {
     int offset = *curr_offset;
@@ -470,7 +496,7 @@ bool parseIconCmd(const char *input, IconCmd *cmd, int *curr_offset)
     if (input[offset++] != ',') {
         return false;
     }
-    if (!parseInt(input, &cmd->codepoint, &offset)) {
+    if (!parseHex(input, &cmd->codepoint, &offset)) {
         return false;
     }
     *curr_offset = offset;
