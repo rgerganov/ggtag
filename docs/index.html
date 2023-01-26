@@ -39,11 +39,11 @@
   <div id="cmdContainer">
     <div class="row">
         <div class="input-group input-group-sm">
-          <!-- <div class="input-group-prepend">
+          <div class="input-group-prepend">
               <div class="input-group-text">
                 <input type="checkbox" aria-label="Checkbox for following text input">
               </div>
-          </div> -->
+          </div>
           <div class="input-group-prepend">
             <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="false">Text</button>
             <div class="dropdown-menu">
@@ -92,7 +92,6 @@
         Share <i class="fa fa-share"></i>
       </a>
     </button>
-    <!-- <a class="btn btn-default" href="#"><i class="fa fa-cog"></i> Settings</a> -->
   </div>
 </div>
 <script>
@@ -132,6 +131,31 @@ $(".fa-trash").parent().click(onDelete);
 $(".dropdown-item").click(onCmdChange);
 $("input[type=text]").keypress(onKeypress);
 $("input[type=text]").focusout(repaint);
+
+// Prevent scrolling when touching the canvas
+var canvas = document.getElementById("ggCanvas");
+document.body.addEventListener("touchstart", function (e) {
+  if (e.target == canvas) {
+    e.preventDefault();
+  }
+}, {passive: false});
+document.body.addEventListener("touchend", function (e) {
+  if (e.target == canvas) {
+    e.preventDefault();
+  }
+}, {passive: false});
+document.body.addEventListener("touchmove", function (e) {
+  if (e.target == canvas) {
+    console.log("prevent scrolling");
+    e.preventDefault();
+  }
+}, {passive: false});
+
+// Use the same handlers for mouse and touch events
+$("#ggCanvas").bind("mousedown touchstart", onMouseDown);
+$("#ggCanvas").bind("mouseup touchend", onMouseUp);
+$("#ggCanvas").bind("mousemove touchmove", onMouseMove);
+
 
 Module['onRuntimeInitialized'] = onRuntimeInitialized;
 </script>

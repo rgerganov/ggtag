@@ -16,6 +16,12 @@ const CMD2ESC = {"Text":      "\\t",
                  "Image":     "\\I",
                  "Icon":      "\\a"}
 
+var dragging = false;
+// keeps the initial position when dragging starts
+var startPos = { x:0, y:0 };
+// keeps the intial position of the elements being dragged
+var initialXYMap = {};
+
 function splitCommands(input) {
     let cmds = [];
     let lastIdx = 0;
@@ -247,6 +253,57 @@ function render(input)
 
     ctx.putImageData(imgData, 0, 0);
     Module._free(ptr);
+}
+
+// Get the position of the mouse relative to the canvas
+function getMousePos(canvasDom, event) {
+    if (event.touches !== undefined && event.touches.length > 0) {
+        event = event.touches[0];
+    }
+    var rect = canvasDom.getBoundingClientRect();
+    return {
+        x: Math.floor(event.clientX) - rect.left,
+        y: Math.floor(event.clientY) - rect.top
+    };
+}
+
+function onMouseDown(e) {
+    dragging = true;
+    let canvas = document.getElementById("ggCanvas");
+    startPos = getMousePos(canvas, e);
+    // save the initial (X,Y) coordinates of the selected commands
+    $('#cmdContainer').find("input:checked").each(function(ind) {
+        let currInput = $(this).parent().parent().parent().find("input[type=text]");
+        let currText = $(currInput).val();
+        let parts = currText.split(",");
+        if (parts.length > 1) {
+            initialXYMap[ind] = { x: parseInt(parts[0]), y: parseInt(parts[1]) };
+        }
+    });
+}
+
+function onMouseUp(e) {
+    dragging = false;
+}
+
+function onMouseMove(e) {
+    if (dragging) {
+        let canvas = document.getElementById("ggCanvas");
+        let currPos = getMousePos(canvas, e);
+        let dx = currPos.x - startPos.x;
+        let dy = currPos.y - startPos.y;
+        $('#cmdContainer').find("input:checked").each(function(ind) {
+            let currInput = $(this).parent().parent().parent().find("input[type=text]");
+            let currText = $(currInput).val();
+            let parts = currText.split(",");
+            if (parts.length > 1) {
+                parts[0] = initialXYMap[ind].x + dx;
+                parts[1] = initialXYMap[ind].y + dy;
+                $(currInput).val(parts.join(","));
+            }
+        });
+        repaint();
+    }
 }
 
 async function readSerialOutput(port)
