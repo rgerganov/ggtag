@@ -68,7 +68,7 @@
   </div>
   <fieldset class="form-group mt-3">
     <div class="row">
-      <legend class="col-form-label col-2">Interface:</legend>
+      <legend class="col-form-label col-2">Method:</legend>
       <div class="col-10">
         <div class="form-check">
           <input class="form-check-input" type="radio" name="iface" id="ifaceSound" value="sound" checked>
@@ -87,12 +87,40 @@
   </fieldset>
   <div class="form-group row">
     <button type="submit" class="btn btn-sm btn-danger mr-3" id="program">Program <i class="fa fa-cog"></i></button>
-    <button type="submit" class="btn btn-sm btn-info" id="share">
+    <button type="submit" class="btn btn-sm btn-info mr-3" id="share">
       <a id="tooltip" data-toggle="tooltip" title="Copied to clipboard">
         Share <i class="fa fa-share"></i>
       </a>
     </button>
+    <button type="button" class="btn btn-sm btn-primary" data-toggle="modal" data-target="#helpModal">Help <i class="fa fa-question"></i></button>
   </div>
+  <!-- Help -->
+  <div class="modal fade" id="helpModal" tabindex="-1" role="dialog" aria-labelledby="helpModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="helpModalLabel">Help</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        The drawing primitives have the following format:<br><br>
+        <b>Text:</b> <tt>X,Y,size,text</tt><br>
+        <b>Circle:</b> <tt>X,Y,radius</tt><br>
+        <b>Rectangle:</b> <tt>X,Y,width,height</tt><br>
+        <b>Line:</b> <tt>X1,Y1,X2,Y2</tt><br>
+        <b>QRcode:</b> <tt>X,Y,pointWidth,text</tt><br>
+        <b>Image:</b> <tt>X,Y,url</tt><br>
+        <b>Icon:</b> <tt>X,Y,height,<a href="https://fontawesome.com/v5/cheatsheet/free/solid">codepoint</a></tt><br><br>
+        You can change the initial (X,Y) coordinates of selected objects by dragging on the canvas.<br>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
 </div>
 <script>
 "use strict";
