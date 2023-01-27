@@ -460,15 +460,71 @@ void run_from_usb()
     }
 }
 
-int main(void) {
-    gpio_init(USB_CHECK_PIN);
-    gpio_set_dir(USB_CHECK_PIN, GPIO_IN);
-    if (gpio_get(USB_CHECK_PIN)) {
-        stdio_usb_init();
-        run_from_usb();
-    } else {
-        stdio_uart_init();
-        run_from_battery();
+void reset_target(bool reset)
+{
+    gpio_put(5, reset ? 0 : 1);
+}
+
+void spi_write_byte(uint8_t val)
+{
+    spi_write_blocking(spi0, &val, 1);
+}
+
+uint8_t spi_read_byte()
+{
+    uint8_t val;
+    spi_read_blocking(spi0, 0, &val, 1);
+    return val;
+}
+
+void program_attiny85()
+{
+    // wait for USB CDC connect
+    while (!stdio_usb_connected()) {
+        tight_loop_contents();
     }
+    printf("Programming attiny85\n");
+    spi_init(spi0, 100000);
+    // SCK = GP2, MOSI = GP3, MISO = GP4, RESET = GP5
+    gpio_set_function(2, GPIO_FUNC_SPI);
+    gpio_set_function(3, GPIO_FUNC_SPI);
+    gpio_set_function(4, GPIO_FUNC_SPI);
+    gpio_init(5);
+    gpio_set_dir(5, GPIO_OUT);
+
+    printf("entering pmode\n");
+    reset_target(true);
+    sleep_ms(50);
+    uint8_t prog_enable[4] = {0xAC, 0x53, 0x00, 0x00};
+    uint8_t in_buf[4];
+    spi_write_read_blocking(spi0, prog_enable, in_buf, 4);
+    printf("in_buf: %02x %02x %02x %02x\n", in_buf[0], in_buf[1], in_buf[2], in_buf[3]);
+    printf("read device signature\n");
+    // read device signature
+    uint8_t read_sig[4] = {0x30, 0x00, 0x00, 0x00};
+    spi_write_read_blocking(spi0, read_sig, in_buf, 4);
+    printf("in_buf: %02x %02x %02x %02x\n", in_buf[0], in_buf[1], in_buf[2], in_buf[3]);
+    read_sig[2] = 0x01;
+    spi_write_read_blocking(spi0, read_sig, in_buf, 4);
+    printf("in_buf: %02x %02x %02x %02x\n", in_buf[0], in_buf[1], in_buf[2], in_buf[3]);
+    read_sig[2] = 0x02;
+    spi_write_read_blocking(spi0, read_sig, in_buf, 4);
+    printf("in_buf: %02x %02x %02x %02x\n", in_buf[0], in_buf[1], in_buf[2], in_buf[3]);
+    while (1) { tight_loop_contents(); }
+}
+
+int main(void) {
+    stdio_usb_init();
+    program_attiny85();
+
+    // gpio_init(USB_CHECK_PIN);
+    // gpio_set_dir(USB_CHECK_PIN, GPIO_IN);
+    // if (gpio_get(USB_CHECK_PIN)) {
+    //     stdio_usb_init();
+    //     run_from_usb();
+    // } else {
+    //     stdio_uart_init();
+    //     run_from_battery();
+    // }
     return 0;
 }
