@@ -492,7 +492,7 @@ void program_attiny85()
     gpio_init(5);
     gpio_set_dir(5, GPIO_OUT);
 
-    printf("entering pmode\n");
+    printf("start pmode\n");
     reset_target(true);
     sleep_ms(50);
     uint8_t prog_enable[4] = {0xAC, 0x53, 0x00, 0x00};
@@ -510,6 +510,11 @@ void program_attiny85()
     read_sig[2] = 0x02;
     spi_write_read_blocking(spi0, read_sig, in_buf, 4);
     printf("in_buf: %02x %02x %02x %02x\n", in_buf[0], in_buf[1], in_buf[2], in_buf[3]);
+
+    printf("end pmode\n");
+    gpio_init(3);
+    gpio_set_dir(3, GPIO_IN);
+    reset_target(false);
     while (1) { tight_loop_contents(); }
 }
 
