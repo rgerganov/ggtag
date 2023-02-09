@@ -37,6 +37,7 @@ target_include_directories(${TARGET} INTERFACE
 )
 
 pico_generate_pio_header(${TARGET} ${CMAKE_CURRENT_LIST_DIR}/target/src/pdm_microphone.pio)
+pico_generate_pio_header(${TARGET} ${CMAKE_CURRENT_LIST_DIR}/target/src/blink.pio)
 
 target_link_libraries(${TARGET} INTERFACE pico_stdlib hardware_dma hardware_pio)
 
