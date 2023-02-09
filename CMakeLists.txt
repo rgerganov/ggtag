@@ -110,6 +110,7 @@ set(TARGET "ggtag-${EPD}")
 
 add_executable(${TARGET}
     ${CMAKE_CURRENT_LIST_DIR}/target/src/main.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/target/src/rfid.cpp
 )
 
 target_link_libraries(${TARGET} PUBLIC pico_pdm_microphone ggwave epd hardware_spi hardware_sleep)
