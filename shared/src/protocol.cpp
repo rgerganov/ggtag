@@ -15,15 +15,15 @@ struct BitReader {
     {
     }
 
-    int read(int num_bits)
+    uint32_t read(int num_bits)
     {
-        if (num_bits > 16) {
+        if (num_bits > 32) {
             return -1;
         }
         if (ind + num_bits > bits_count) {
             return -1;
         }
-        int result = 0;
+        uint32_t result = 0;
         for (int i = 0; i < num_bits; i++) {
             result <<= 1;
             if (buffer[ind / 8] & (1 << (7 - (ind % 8)))) {
@@ -207,6 +207,12 @@ void renderBits(const uint8_t *input, int bits_count)
                     }
                 }
                 free(cp);
+                break;
+            }
+            case RFID_CMD: {
+                uint8_t mfr_id = br.read(MFR_BITS);
+                uint32_t uid = br.read(UID_BITS);
+                printf("Programming RFID mfr_id=%x uid=%x\n", mfr_id, uid);
                 break;
             }
             default:

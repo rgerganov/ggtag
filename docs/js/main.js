@@ -6,7 +6,8 @@ const ESC2CMD = {"\\t": "Text",
                  "\\l": "Line",
                  "\\q": "QR code",
                  "\\I": "Image",
-                 "\\a": "Icon"}
+                 "\\a": "Icon",
+                 "\\f": "RFID"}
 
 const CMD2ESC = {"Text":      "\\t",
                  "Circle":    "\\c",
@@ -14,7 +15,8 @@ const CMD2ESC = {"Text":      "\\t",
                  "Line":      "\\l",
                  "QR code":   "\\q",
                  "Image":     "\\I",
-                 "Icon":      "\\a"}
+                 "Icon":      "\\a",
+                 "RFID":      "\\f"}
 
 var dragging = false;
 // keeps the initial position when dragging starts
@@ -52,6 +54,7 @@ function onRuntimeInitialized()
         changeSize(document.getElementById("largeRadio"), false);
         document.getElementById("largeRadio").checked = true;
     }
+    // take the input from the URL and split it into commands
     let input = params.i;
     if (input) {
         let cmds = splitCommands(input)
@@ -117,15 +120,19 @@ function onCmdChange() {
     let prevCmd = $(curr).find("button").text();
     let prevText = $(curr).find("input[type=text]").val();
     if (newCmd != prevCmd) {
-        let parts = prevText.split(",");
-        let x = randomInt(0, 100);
-        let y = randomInt(0, 100);
-        if (parts.length > 1) {
-            // keep the old coordinates if possible
-            x = parseInt(parts[0]);
-            y = parseInt(parts[1]);
-        }
+        let xyCoord = "";
         let remaining = "";
+        if (newCmd != "RFID") {
+            let parts = prevText.split(",");
+            let x = randomInt(0, 100);
+            let y = randomInt(0, 100);
+            if (parts.length > 1 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+                // keep the old coordinates if possible
+                x = parseInt(parts[0]);
+                y = parseInt(parts[1]);
+            }
+            xyCoord = x + "," + y + ",";
+        }
         if (newCmd == "Text") {
             let fontNum = randomInt(1, 5);
             remaining = fontNum + "," + randomWord();
@@ -144,9 +151,11 @@ function onCmdChange() {
             remaining = "https://xakcop.com/doomface.png";
         } else if (newCmd == "Icon") {
             remaining = randomInt(16,40) + "," + randomIcon();
+        } else if (newCmd == "RFID") {
+            remaining = "em,12,3456789A";
         }
         $(curr).find("button").text(newCmd);
-        $(curr).find("input[type=text]").val(x+","+y+","+remaining);
+        $(curr).find("input[type=text]").val(xyCoord+remaining);
         repaint();
     }
 }
@@ -162,9 +171,9 @@ function onDelete() {
 function onAdd() {
     let currRow = $(this).parent().parent().parent();
     let currText = $(currRow).find("input[type=text]").val();
-    // clone the preivous row and only change the (X,Y) coordinates
+    // clone the current row and change the (X,Y) coordinates (if any)
     let parts = currText.split(",");
-    if (parts.length > 1) {
+    if (parts.length > 1 && !isNaN(parts[0]) && !isNaN(parts[1])) {
         parts[0] = randomInt(0, 100);
         parts[1] = randomInt(0, 100);
     }
@@ -276,8 +285,12 @@ function onMouseDown(e) {
         let currInput = $(this).parent().parent().parent().find("input[type=text]");
         let currText = $(currInput).val();
         let parts = currText.split(",");
-        if (parts.length > 1) {
+        if (parts.length > 1 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+            // draggable command
             initialXYMap[ind] = { x: parseInt(parts[0]), y: parseInt(parts[1]) };
+        } else {
+            // non-draggable command (e.g. rfid)
+            initialXYMap[ind] = null;
         }
     });
 }
@@ -293,6 +306,9 @@ function onMouseMove(e) {
         let dx = currPos.x - startPos.x;
         let dy = currPos.y - startPos.y;
         $('#cmdContainer').find("input:checked").each(function(ind) {
+            if (initialXYMap[ind] == null) {
+                return;
+            }
             let currInput = $(this).parent().parent().parent().find("input[type=text]");
             let currText = $(currInput).val();
             let parts = currText.split(",");

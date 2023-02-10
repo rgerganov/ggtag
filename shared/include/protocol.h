@@ -16,8 +16,10 @@
 #define IMAGE_CMD    5
 // draw font awesome icon
 #define ICON_CMD     6
+// program rfid
+#define RFID_CMD     7
 
-#define EOF_CMD      7
+#define EOF_CMD      8
 
 // bits for command
 #define CMD_BITS       4
@@ -37,6 +39,10 @@
 #define QR_PIXEL_WIDTH 2
 // bits for icon codepoint
 #define ICON_BITS      16
+// bits for rfid EM4102 manufacturer
+#define MFR_BITS       8
+// bits for rfid EM4102 UID
+#define UID_BITS       32
 
 extern "C" {
 void renderBits(const uint8_t *input, int bits_count);

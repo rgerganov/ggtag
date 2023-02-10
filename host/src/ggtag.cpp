@@ -58,6 +58,11 @@ struct QRCodeCmd {
     int text_len;
 };
 
+struct RFIDCmd {
+    int mfr_id;
+    int uid;
+};
+
 struct BitBuffer {
     uint8_t *buffer;
     int capacity; // capacity in bytes
@@ -187,6 +192,19 @@ struct BitBuffer {
             return false;
         }
         if (!addBits(cmd.codepoint, ICON_BITS)) {
+            return false;
+        }
+        return true;
+    }
+    bool addCmd(const RFIDCmd &cmd)
+    {
+        if (!addBits(RFID_CMD, CMD_BITS)) {
+            return false;
+        }
+        if (!addBits(cmd.mfr_id, MFR_BITS)) {
+            return false;
+        }
+        if (!addBits(cmd.uid, UID_BITS)) {
             return false;
         }
         return true;
@@ -335,6 +353,9 @@ bool parseCommand(const char *input, int *cmd, int *curr_offset)
             break;
         case 'a':
             *cmd = ICON_CMD;
+            break;
+        case 'f':
+            *cmd = RFID_CMD;
             break;
         default:
             return false;
@@ -497,6 +518,44 @@ bool parseIconCmd(const char *input, IconCmd *cmd, int *curr_offset)
         return false;
     }
     if (!parseHex(input, &cmd->codepoint, &offset)) {
+        return false;
+    }
+    *curr_offset = offset;
+    return true;
+}
+
+bool parseLiteral(const char *input, const char *literal, int *curr_offset)
+{
+    int offset = *curr_offset;
+    while (*literal) {
+        if (input[offset++] != *literal++) {
+            return false;
+        }
+    }
+    *curr_offset = offset;
+    return true;
+}
+
+// RFIDCommand: <mfr_id_hex>,<unique_id_hex>
+bool parseRFIDCmd(const char *input, RFIDCmd *cmd, int *curr_offset)
+{
+    int offset = *curr_offset;
+    if (!input[offset]) {
+        return false;
+    }
+    if (!parseLiteral(input, "em,", &offset)) {
+        return false;
+    }
+    if (!parseHex(input, &cmd->mfr_id, &offset)) {
+        return false;
+    }
+    if (cmd->mfr_id < 0 || cmd->mfr_id > 0xff) {
+        return false;
+    }
+    if (input[offset++] != ',') {
+        return false;
+    }
+    if (!parseHex(input, &cmd->uid, &offset)) {
         return false;
     }
     *curr_offset = offset;
@@ -713,6 +772,15 @@ bool parse(const char *input, BitBuffer *buf, int *curr_offset)
                 return false;
             }
             if (!buf->addCmd(icon_cmd)) {
+                return false;
+            }
+            break;
+        case RFID_CMD:
+            RFIDCmd rfid_cmd;
+            if (!parseRFIDCmd(input, &rfid_cmd, &offset)) {
+                return false;
+            }
+            if (!buf->addCmd(rfid_cmd)) {
                 return false;
             }
             break;
