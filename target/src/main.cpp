@@ -32,7 +32,7 @@
 #define WAKE_PIN 18
 
 // if there is 1 on this pin then we are running from USB
-#define USB_CHECK_PIN 4
+#define USB_CHECK_PIN 16
 
 #define SAMPLE_RATE 24000
 #define BUF_SIZE 528

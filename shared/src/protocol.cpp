@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "rfid.h"
 #include "protocol.h"
 #include "GUI_Paint.h"
 #define STB_TRUETYPE_IMPLEMENTATION
@@ -82,6 +83,10 @@ void renderBits(const uint8_t *input, int bits_count)
                     return;
                 }
                 char *text = (char*) malloc(length+1);
+                if (!text) {
+                    printf("Failed to allocate memory for text\n");
+                    return;
+                }
                 for (int i = 0; i < length; i++) {
                     int ch = br.read(CHAR_BITS);
                     text[i] = ch;
@@ -213,6 +218,7 @@ void renderBits(const uint8_t *input, int bits_count)
                 uint8_t mfr_id = br.read(MFR_BITS);
                 uint32_t uid = br.read(UID_BITS);
                 printf("Programming RFID mfr_id=%x uid=%x\n", mfr_id, uid);
+                program_em_rfid(mfr_id, uid);
                 break;
             }
             default:
