@@ -48,6 +48,13 @@ void EPD_Init()
     EPD_Reset();
     DEV_Delay_ms(100);
 
+    EPD_SendCommand(0x4D);
+    EPD_SendData(0x55);
+    EPD_SendCommand(0xA9);
+    EPD_SendData(0x25);
+    EPD_SendCommand(0xF3);
+    EPD_SendData(0x0A);
+
     EPD_SendCommand(0x04); //power on
     DEV_Delay_ms(10);
     EPD_ReadBusy();
@@ -72,6 +79,7 @@ void EPD_Clear()
     Height = EPD_HEIGHT;
 
     EPD_SendCommand(0x10);
+    EPD_ReadBusy();
     for (UWORD j = 0; j < Height; j++) {
         for (UWORD i = 0; i < Width; i++) {
             EPD_SendData(0xFF);
@@ -79,6 +87,7 @@ void EPD_Clear()
     }
     EPD_SendCommand(0x11);
     EPD_SendCommand(0x13);
+    EPD_ReadBusy();
     for (UWORD j = 0; j < Height; j++) {
         for (UWORD i = 0; i < Width; i++) {
             EPD_SendData(0x00);
@@ -95,6 +104,7 @@ void EPD_Display(const UBYTE *blackImage, const UBYTE *redImage)
     Height = EPD_HEIGHT;
 
     EPD_SendCommand(0x10);
+    EPD_ReadBusy();
     for (UWORD j = 0; j < Height; j++) {
         for (UWORD i = 0; i < Width; i++) {
             EPD_SendData(blackImage[i + j * Width]);
@@ -102,6 +112,7 @@ void EPD_Display(const UBYTE *blackImage, const UBYTE *redImage)
     }
     EPD_SendCommand(0x11);
     EPD_SendCommand(0x13);
+    EPD_ReadBusy();
     for (UWORD j = 0; j < Height; j++) {
         for (UWORD i = 0; i < Width; i++) {
             EPD_SendData(redImage ? redImage[i + j * Width] : 0x00);

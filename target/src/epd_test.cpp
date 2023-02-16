@@ -40,7 +40,9 @@ int main()
     Paint_DrawRectangle(5, 5, EPD_HEIGHT-5, EPD_WIDTH-5, BLACK, DOT_PIXEL_1X1, DRAW_FILL_EMPTY);
     Paint_DrawString_EN(EPD_HEIGHT/2, EPD_WIDTH/2, "Hello World", &Font16, WHITE, BLACK);
     EPD_Display(img, NULL);
+    printf("Sleeping...\n");
     EPD_Sleep();
+    printf("Done\n");
     while (1) { tight_loop_contents(); }
     return 0;
 }
