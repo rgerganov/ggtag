@@ -41,45 +41,45 @@ static uint8_t footer[FOOTER_SIZE] = {
 
 static uint8_t prog[PROG_SIZE];
 
-static void rcall(int addr, int dest)
+static void rcall(int *addr, int dest)
 {
-    int offset = (dest - addr - 2) / 2;
+    int offset = (dest - *addr - 2) / 2;
     uint16_t opcode = 0xd000;
     opcode |= (offset & 0x0fff);
-    prog[addr] = opcode & 0xff;
-    prog[addr+1] = (opcode >> 8) & 0xff;
+    prog[(*addr)++] = opcode & 0xff;
+    prog[(*addr)++] = (opcode >> 8) & 0xff;
 }
 
-static void rjmp(int addr)
+static void rjmp0(int *addr)
 {
     // rjmp .+0
-    prog[addr] = 0x00;
-    prog[addr + 1] = 0xc0;
+    prog[(*addr)++] = 0x00;
+    prog[(*addr)++] = 0xc0;
 }
 
-static void rjmp_main(int addr)
+static void rjmp_main(int *addr)
 {
     // rjmp main
-    prog[addr] = 0x00;
-    prog[addr + 1] = 0xcf;
+    prog[(*addr)++] = 0x00;
+    prog[(*addr)++] = 0xcf;
 }
 
-static void manchester(int *addr, int value, int bit_count)
+static void manchester(int *addr, uint32_t value, int bit_count)
 {
     const int baseband30_0_addr = 0x230;
     const int baseband30_1_addr = 0x234;
-    int mask = 1 << (bit_count - 1);
+    uint32_t mask = 1 << (bit_count - 1);
     for (int i = 0 ; i < bit_count ; i++) {
         if (value & mask) {
-            rcall(*addr, baseband30_1_addr); *addr += 2;
-            rjmp(*addr); *addr += 2;
-            rcall(*addr, baseband30_0_addr); *addr += 2;
-            rjmp(*addr); *addr += 2;
+            rcall(addr, baseband30_1_addr);
+            rjmp0(addr);
+            rcall(addr, baseband30_0_addr);
+            rjmp0(addr);
         } else {
-            rcall(*addr, baseband30_0_addr); *addr += 2;
-            rjmp(*addr); *addr += 2;
-            rcall(*addr, baseband30_1_addr); *addr += 2;
-            rjmp(*addr); *addr += 2;
+            rcall(addr, baseband30_0_addr);
+            rjmp0(addr);
+            rcall(addr, baseband30_1_addr);
+            rjmp0(addr);
         }
         mask >>= 1;
     }
@@ -89,10 +89,10 @@ static void stop_bit(int *addr)
 {
     const int baseband30_0_addr = 0x230;
     const int baseband30_1_addr = 0x234;
-    rcall(*addr, baseband30_0_addr); *addr += 2;
-    rjmp(*addr); *addr += 2;
-    rcall(*addr, baseband30_1_addr); *addr += 2;
-    rjmp_main(*addr); *addr += 2;
+    rcall(addr, baseband30_0_addr);
+    rjmp0(addr);
+    rcall(addr, baseband30_1_addr);
+    rjmp_main(addr);
 }
 
 static void reset_target(bool reset)
@@ -309,7 +309,6 @@ bool program_em_rfid(uint8_t mfr_id, uint32_t uid)
     printf("lfuse: %02x\n", read_lfuse());
 
     printf("writing flash\n");
-    //write_flash(em1_bin, em_bin_len);
     write_flash(prog, PROG_SIZE);
 
     printf("reading flash\n");
