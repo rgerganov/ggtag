@@ -215,10 +215,16 @@ void renderBits(const uint8_t *input, int bits_count)
                 break;
             }
             case RFID_CMD: {
-                uint8_t mfr_id = br.read(MFR_BITS);
-                uint32_t uid = br.read(UID_BITS);
-                printf("Programming RFID mfr_id=%x uid=%x\n", mfr_id, uid);
-                program_em_rfid(mfr_id, uid);
+                uint8_t is_hid = br.read(1);
+                uint16_t id1 = br.read(RFID1_BITS);
+                uint32_t id2 = br.read(RFID2_BITS);
+                if (is_hid) {
+                    printf("Programming HID id1=%x id2=%x\n", id1, id2);
+                    program_hid_rfid(id1, id2);
+                } else {
+                    printf("Programming EM4102 mfr_id=%x uid=%x\n", id1, id2);
+                    program_em_rfid(id1, id2);
+                }
                 break;
             }
             default:

@@ -39,10 +39,10 @@
 #define QR_PIXEL_WIDTH 2
 // bits for icon codepoint
 #define ICON_BITS      16
-// bits for rfid EM4102 manufacturer
-#define MFR_BITS       8
-// bits for rfid EM4102 UID
-#define UID_BITS       32
+// bits for RFID (first part)
+#define RFID1_BITS     13
+// bits for RFID (second part)
+#define RFID2_BITS     32
 
 extern "C" {
 void renderBits(const uint8_t *input, int bits_count);

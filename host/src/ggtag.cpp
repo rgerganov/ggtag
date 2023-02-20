@@ -59,8 +59,9 @@ struct QRCodeCmd {
 };
 
 struct RFIDCmd {
-    int mfr_id;
-    int uid;
+    bool is_hid; // true means HID, false means EM4102
+    int id1;
+    int id2;
 };
 
 struct BitBuffer {
@@ -201,10 +202,13 @@ struct BitBuffer {
         if (!addBits(RFID_CMD, CMD_BITS)) {
             return false;
         }
-        if (!addBits(cmd.mfr_id, MFR_BITS)) {
+        if (!addBits(cmd.is_hid, 1)) {
             return false;
         }
-        if (!addBits(cmd.uid, UID_BITS)) {
+        if (!addBits(cmd.id1, RFID1_BITS)) {
+            return false;
+        }
+        if (!addBits(cmd.id2, RFID2_BITS)) {
             return false;
         }
         return true;
@@ -536,7 +540,7 @@ bool parseLiteral(const char *input, const char *literal, int *curr_offset)
     return true;
 }
 
-// RFIDCommand: <mfr_id_hex>,<unique_id_hex>
+// RFIDCommand: em|hid,<id1_hex>,<id2_hex>
 bool parseRFIDCmd(const char *input, RFIDCmd *cmd, int *curr_offset)
 {
     int offset = *curr_offset;
@@ -544,18 +548,31 @@ bool parseRFIDCmd(const char *input, RFIDCmd *cmd, int *curr_offset)
         return false;
     }
     if (!parseLiteral(input, "em,", &offset)) {
+        if (!parseLiteral(input, "hid,", &offset)) {
+            // expected "em," or "hid," prefix
+            return false;
+        } else {
+            cmd->is_hid = true;
+        }
+    } else {
+        cmd->is_hid = false;
+    }
+
+    if (!parseHex(input, &cmd->id1, &offset)) {
         return false;
     }
-    if (!parseHex(input, &cmd->mfr_id, &offset)) {
+    if (!cmd->is_hid && (cmd->id1 < 0 || cmd->id1 > 0xff)) {
+        // TODO: set error message
         return false;
     }
-    if (cmd->mfr_id < 0 || cmd->mfr_id > 0xff) {
+    if (cmd->is_hid && (cmd->id1 < 0 || cmd->id1 > 0x1fff)) {
+        // TODO: set error message
         return false;
     }
     if (input[offset++] != ',') {
         return false;
     }
-    if (!parseHex(input, &cmd->uid, &offset)) {
+    if (!parseHex(input, &cmd->id2, &offset)) {
         return false;
     }
     *curr_offset = offset;
