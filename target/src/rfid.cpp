@@ -226,7 +226,7 @@ static uint8_t spi_read_byte()
     return val;
 }
 
-static void blink_pin_forever(PIO pio, uint sm, uint offset, uint pin, uint freq) {
+static void blink_pin_start(PIO pio, uint sm, uint offset, uint pin, uint freq) {
     blink_program_init(pio, sm, offset, pin);
     pio_sm_set_enabled(pio, sm, true);
 
@@ -235,6 +235,10 @@ static void blink_pin_forever(PIO pio, uint sm, uint offset, uint pin, uint freq
     // PIO counter program takes 3 more cycles in total than we pass as
     // input (wait for n + 1; mov; jmp)
     pio->txf[sm] = (clock_get_hz(clk_sys) / (2 * freq)) - 3;
+}
+
+static void blink_pin_stop(PIO pio, uint sm) {
+    pio_sm_set_enabled(pio, sm, false);
 }
 
 static void flash(uint8_t hilo, unsigned int addr, uint8_t data)
@@ -370,7 +374,7 @@ static bool flash_program(int prog_size)
     PIO pio = pio1;
     uint offset = pio_add_program(pio, &blink_program);
     printf("Loaded program at %d\n", offset);
-    blink_pin_forever(pio, 0, offset, 6, 1000000);
+    blink_pin_start(pio, 0, offset, 6, 1000000);
 
     printf("Programming attiny85\n");
     spi_init(spi0, 100000);
@@ -392,7 +396,10 @@ static bool flash_program(int prog_size)
     uint8_t sig[3];
     printf("read device signature\n");
     read_signature(sig);
-    printf("sig: %02x %02x %02x\n", sig[0], sig[1], sig[2]);
+    if (sig[0] != 0x1E || sig[1] != 0x93 || sig[2] != 0x0B) {
+        printf("signature mismatch\n");
+        return false;
+    }
 
     printf("writing lfuse\n");
     write_lfuse(0xC0);
@@ -404,13 +411,14 @@ static bool flash_program(int prog_size)
     printf("writing flash\n");
     write_flash(prog, prog_size);
 
-    printf("reading flash\n");
-    flash_read_page(0);
+    //printf("reading flash\n");
+    //flash_read_page(0);
 
     printf("end pmode\n");
     gpio_init(3);
     gpio_set_dir(3, GPIO_IN);
     reset_target(false);
+    blink_pin_stop(pio, 0);
     return true;
 }
 
