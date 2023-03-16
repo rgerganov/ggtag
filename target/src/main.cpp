@@ -418,8 +418,6 @@ void run_from_usb()
         printf("EPD module init failed\n");
         while (1) { tight_loop_contents(); }
     }
-    printf("e-Paper Init and Clear...\n");
-    EPD_Init();
 
     //Create a new image cache
     UWORD imgSize = ((EPD_WIDTH % 8 == 0)? (EPD_WIDTH / 8 ): (EPD_WIDTH / 8 + 1)) * EPD_HEIGHT;
@@ -428,7 +426,6 @@ void run_from_usb()
         while (1) { tight_loop_contents(); }
     }
 
-    int ind = 0;
     while (1) {
         int l1 = getchar_timeout_us(100000); // 100ms
         if (l1 < 0) {
@@ -445,16 +442,18 @@ void run_from_usb()
             stdio_flush();
             continue;
         }
-        ind = 0;
         for (int i = 0; i < length; i++) {
-            data[ind++] = getchar_timeout_us(1000);
+            data[i] = getchar_timeout_us(1000);
         }
+        EPD_Init();
         printf("Drawing\n");
         Paint_NewImage(img, EPD_WIDTH, EPD_HEIGHT, 90, WHITE);
         Paint_Clear(WHITE);
         renderBits(data, length*8);
         free(data);
         EPD_Display(img, NULL);
+        // TODO: putting display to sleep is causing problems
+        // EPD_Sleep();
         printf("Done.\n");
         stdio_flush();
     }
