@@ -366,7 +366,8 @@ async function programSerial(input)
     let port = {};
     if ("serial" in navigator) {
         // use the WebSerial API
-        port = await navigator.serial.requestPort();
+        // filter by usb vendorId and productId
+        port = await navigator.serial.requestPort({ filters: [{ usbVendorId: 0x2e8a, usbProductId: 0x000a }] });
     } else {
         // WebSerial over WebUSB (works on Android)
         port = await exports.serial.requestPort();
