@@ -1,0 +1,47 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  ubuntu-build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Dependencies
+      run: |
+        sudo apt update
+        sudo apt install cmake gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib
+
+    - name: checkout
+      uses: actions/checkout@v2
+      with:
+          path: ggtag
+          submodules: recursive
+
+    - name: checkout pico sdk
+      uses: actions/checkout@v2
+      with:
+          repository: raspberrypi/pico-sdk
+          path: pico-sdk
+          submodules: recursive
+
+    - name: checkout pico extras
+      uses: actions/checkout@v2
+      with:
+          repository: raspberrypi/pico-extras
+          path: pico-extras
+          submodules: recursive
+
+    - name: get core count
+      id: core_count
+      run : cat /proc/cpuinfo  | grep processor | wc -l
+
+    - name: Build
+      working-directory: ${{github.workspace}}/ggtag
+      shell: bash
+      run: |
+        make
+        mkdir build
+        cd build
+        PICO_SDK_PATH=$GITHUB_WORKSPACE/pico-sdk PICO_EXTRAS_PATH=$GITHUB_WORKSPACE/pico-extras cmake .. -DPICO_BOARD=pico -DEPD=3in52-rse
+        make -j
+
