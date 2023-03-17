@@ -15,21 +15,21 @@ jobs:
       uses: actions/checkout@v2
       with:
           path: ggtag
-          submodules: recursive
+          submodules: true
 
     - name: checkout pico sdk
       uses: actions/checkout@v2
       with:
           repository: raspberrypi/pico-sdk
           path: pico-sdk
-          submodules: recursive
+          submodules: true
 
     - name: checkout pico extras
       uses: actions/checkout@v2
       with:
           repository: raspberrypi/pico-extras
           path: pico-extras
-          submodules: recursive
+          submodules: true
 
     - name: get core count
       id: core_count
