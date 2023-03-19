@@ -322,7 +322,17 @@ function onMouseMove(e) {
             let parts = currText.split(",");
             if (parts.length > 1) {
                 parts[0] = initialXYMap[ind].x + dx;
+                if (parts[0] > canvas.width) {
+                    parts[0] = parts[0] % canvas.width;
+                } else if (parts[0] < 0) {
+                    parts[0] = canvas.width + parts[0];
+                }
                 parts[1] = initialXYMap[ind].y + dy;
+                if (parts[1] > canvas.height) {
+                    parts[1] = parts[1] % canvas.height;
+                } else if (parts[1] < 0) {
+                    parts[1] = canvas.height + parts[1];
+                }
                 $(currInput).val(parts.join(","));
             }
         });
