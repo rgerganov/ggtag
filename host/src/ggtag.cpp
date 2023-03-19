@@ -326,6 +326,8 @@ struct BitBuffer {
     }
 };
 
+static char lastError[256];
+
 bool parseCommand(const char *input, int *cmd, int *curr_offset)
 {
     int offset = *curr_offset;
@@ -725,12 +727,14 @@ bool parse(const char *input, BitBuffer *buf, int *curr_offset)
     int cmd;
     int offset = *curr_offset;
     if (!parseCommand(input, &cmd, &offset)) {
+        sprintf(lastError, "Invalid command");
         return false;
     }
     switch (cmd) {
         case TEXT_CMD:
             TextCmd text_cmd;
             if (!parseTextCmd(input, &text_cmd, &offset)) {
+                sprintf(lastError, "Failed to parse Text command");
                 return false;
             }
             printTextCmd(&text_cmd);
@@ -741,6 +745,7 @@ bool parse(const char *input, BitBuffer *buf, int *curr_offset)
         case RECT_CMD:
             RectCmd rect_cmd;
             if (!parseRectCmd(input, &rect_cmd, &offset)) {
+                sprintf(lastError, "Failed to parse Rect command");
                 return false;
             }
             if (!buf->addCmd(rect_cmd)) {
@@ -750,6 +755,7 @@ bool parse(const char *input, BitBuffer *buf, int *curr_offset)
         case CIRCLE_CMD:
             CircleCmd circle_cmd;
             if (!parseCircleCmd(input, &circle_cmd, &offset)) {
+                sprintf(lastError, "Failed to parse Circle command");
                 return false;
             }
             if (!buf->addCmd(circle_cmd)) {
@@ -759,6 +765,7 @@ bool parse(const char *input, BitBuffer *buf, int *curr_offset)
         case LINE_CMD:
             LineCmd line_cmd;
             if (!parseLineCmd(input, &line_cmd, &offset)) {
+                sprintf(lastError, "Failed to parse Line command");
                 return false;
             }
             if (!buf->addCmd(line_cmd)) {
@@ -768,6 +775,7 @@ bool parse(const char *input, BitBuffer *buf, int *curr_offset)
         case QRCODE_CMD:
             QRCodeCmd qrcode_cmd;
             if (!parseQRCodeCmd(input, &qrcode_cmd, &offset)) {
+                sprintf(lastError, "Failed to parse QRcode command");
                 return false;
             }
             if (!buf->addCmd(qrcode_cmd)) {
@@ -777,6 +785,7 @@ bool parse(const char *input, BitBuffer *buf, int *curr_offset)
         case IMAGE_CMD:
             ImageCmd image_cmd;
             if (!parseImageCmd(input, &image_cmd, &offset)) {
+                sprintf(lastError, "Failed to parse Image command");
                 return false;
             }
             if (!buf->addCmd(image_cmd)) {
@@ -786,6 +795,7 @@ bool parse(const char *input, BitBuffer *buf, int *curr_offset)
         case ICON_CMD:
             IconCmd icon_cmd;
             if (!parseIconCmd(input, &icon_cmd, &offset)) {
+                sprintf(lastError, "Failed to parse Icon command");
                 return false;
             }
             if (!buf->addCmd(icon_cmd)) {
@@ -795,6 +805,7 @@ bool parse(const char *input, BitBuffer *buf, int *curr_offset)
         case RFID_CMD:
             RFIDCmd rfid_cmd;
             if (!parseRFIDCmd(input, &rfid_cmd, &offset)) {
+                sprintf(lastError, "Failed to parse RFID command");
                 return false;
             }
             if (!buf->addCmd(rfid_cmd)) {
@@ -814,7 +825,11 @@ extern "C" {
     {
         BitBuffer buf;
         int offset = 0;
-        if (!parse(input, &buf, &offset)) {
+        if (parse(input, &buf, &offset)) {
+            // clear the error message if parsing was successful
+            sprintf(lastError, "OK");
+        }
+        if (buf.size() == 0) {
             return 0;
         }
         //buf.dumpBytes();
@@ -831,13 +846,24 @@ extern "C" {
         return ret;
     }
 
+    // Returns the last error message from the parser.
+    // The memory is owned by the parser and should not be freed.
+    char* getLastError()
+    {
+        return lastError;
+    }
+
     // Allocates a bitmap with dimensions [ceil(width/8), height] and renders the specified input string to it.
     // Caller is responsible for freeing the bitmap.
     uint8_t* render(const char *input, int width, int height)
     {
         int offset = 0;
         BitBuffer buf;
-        if (!parse(input, &buf, &offset)) {
+        if (parse(input, &buf, &offset)) {
+            // clear the error message if parsing was successful
+            sprintf(lastError, "OK");
+        }
+        if (buf.size() == 0) {
             return 0;
         }
         printf("Bit buffer length: %d\n", buf.ind);

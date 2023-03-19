@@ -1497,6 +1497,9 @@ var _free = Module["_free"] = createExportWrapper("free");
 var _encode = Module["_encode"] = createExportWrapper("encode");
 
 /** @type {function(...*):?} */
+var _getLastError = Module["_getLastError"] = createExportWrapper("getLastError");
+
+/** @type {function(...*):?} */
 var _render = Module["_render"] = createExportWrapper("render");
 
 /** @type {function(...*):?} */
@@ -1543,12 +1546,12 @@ var dynCall_jiji = Module["dynCall_jiji"] = createExportWrapper("dynCall_jiji");
 
 // === Auto-generated postamble setup entry stuff ===
 
+Module["UTF8ToString"] = UTF8ToString;
 Module["ccall"] = ccall;
 Module["getValue"] = getValue;
 var unexportedRuntimeSymbols = [
   'run',
   'UTF8ArrayToString',
-  'UTF8ToString',
   'stringToUTF8Array',
   'stringToUTF8',
   'lengthBytesUTF8',

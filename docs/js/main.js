@@ -239,8 +239,16 @@ function render(input)
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     let ptr = Module.ccall('render', 'number', ['string', 'number', 'number'], [input, canvas.width, canvas.height]);
+    let errPtr = Module.ccall('getLastError', 'number', [], []);
+    let jsStr = Module.UTF8ToString(errPtr);
+    if (jsStr !== "OK") {
+        $("#errMsg").text(jsStr);
+        $("#errDiv").show();
+    } else {
+        $("#errDiv").hide();
+    }
     if (ptr == 0) {
-        throw 'render() failed';
+        return;
     }
     let width = Math.ceil(canvas.width / 8);
     let height = canvas.height;
@@ -355,7 +363,8 @@ async function programSerial(input)
     let lengthPtr = Module._malloc(4);
     let ptr = Module.ccall('encode', 'number', ['string', 'number'], [input, lengthPtr]);
     if (ptr == 0) {
-        throw 'encode() failed';
+        Module._free(lengthPtr);
+        return;
     }
     let length = Module.getValue(lengthPtr, 'i32');
     console.log("Encoded data length: " + length);
@@ -398,7 +407,8 @@ async function programSound(input)
     let lengthPtr = Module._malloc(4);
     let ptr = Module.ccall('encode', 'number', ['string', 'number'], [input, lengthPtr]);
     if (ptr == 0) {
-        throw 'encode() failed';
+        Module._free(lengthPtr);
+        return;
     }
     let length = Module.getValue(lengthPtr, 'i32');
     console.log("Encoded data length: " + length);
