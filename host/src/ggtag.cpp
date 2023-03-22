@@ -523,7 +523,14 @@ bool parseIconCmd(const char *input, IconCmd *cmd, int *curr_offset)
     if (input[offset++] != ',') {
         return false;
     }
-    if (!parseHex(input, &cmd->codepoint, &offset)) {
+    const char* iconName = input + offset;
+    int len = 0;
+    while ((input[offset] >= 'a' && input[offset] <= 'z') || (input[offset] >= 'A' && input[offset] <= 'Z') || input[offset] == '-') {
+        len++;
+        offset++;
+    }
+    cmd->codepoint = get_codepoint(iconName, len);
+    if (cmd->codepoint < 0) {
         return false;
     }
     *curr_offset = offset;

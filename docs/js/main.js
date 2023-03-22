@@ -110,7 +110,7 @@ function randomWord() {
 }
 
 function randomIcon() {
-    let codepoints = ["f5e4", "f188", "f0f9", "f521", "f52f", "f2fe"];
+    let codepoints = ["car-side", "bug", "ambulance", "crown", "gas-pump", "poo"];
     return codepoints[randomInt(0, codepoints.length - 1)];
 }
 
