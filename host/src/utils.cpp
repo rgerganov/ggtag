@@ -1036,7 +1036,7 @@ int get_codepoint(const char *name, int len)
     if (len == 0) {
         return -1;
     }
-    for (int i = 0; i < (int)sizeof(icons)/sizeof(icons[0]); i++) {
+    for (int i = 0; i < (int)sizeof(icons)/(int)sizeof(icons[0]); i++) {
         if (strncasecmp(icons[i].name, name, len) == 0) {
             return icons[i].codepoint;
         }

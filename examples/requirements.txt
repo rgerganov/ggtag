@@ -1,0 +1,5 @@
+ggtag
+ggwave
+pyaudio
+pyserial
+pypng

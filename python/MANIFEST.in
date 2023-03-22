@@ -1,0 +1,2 @@
+recursive-include host *.cpp *.h
+recursive-include shared *.c *.cpp *.h

@@ -744,7 +744,7 @@ bool parse(const char *input, BitBuffer *buf, int *curr_offset)
                 sprintf(lastError, "Failed to parse Text command");
                 return false;
             }
-            printTextCmd(&text_cmd);
+            //printTextCmd(&text_cmd);
             if (!buf->addCmd(text_cmd)) {
                 return false;
             }
