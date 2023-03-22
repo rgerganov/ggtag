@@ -1,0 +1,15 @@
+{
+  "background_color": "white",
+  "description": "Webapp for programming ggtag",
+  "display": "fullscreen",
+  "icons": [
+    {
+      "src": "ggtag-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ],
+  "name": "ggtag",
+  "short_name": "ggtag",
+  "start_url": "/index.html"
+}
