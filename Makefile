@@ -14,7 +14,7 @@ OBJ := $(SHARED_SRC)/protocol.o $(SHARED_SRC)/GUI_Paint.o \
 	   $(HOST_SRC)/ggtag.o $(HOST_SRC)/rfid.o
 
 ifeq ($(CXX),emcc)
-	EMFLAGS = -s EXPORTED_FUNCTIONS='["_render","_encode","_getLastError", "_malloc","_free"]' -s EXPORTED_RUNTIME_METHODS='["ccall","getValue","UTF8ToString"]' -s ALLOW_MEMORY_GROWTH=1
+	EMFLAGS = -s EXPORTED_FUNCTIONS='["_render","_encode","_dither","_getLastError", "_malloc","_free"]' -s EXPORTED_RUNTIME_METHODS='["ccall","getValue","UTF8ToString"]' -s ALLOW_MEMORY_GROWTH=1
 	EXE := docs/js/ggtag.js
 endif
 CXXFLAGS = -Wall -O2 -I$(SHARED_INC) -I$(HOST_INC)

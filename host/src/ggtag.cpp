@@ -864,6 +864,9 @@ extern "C" {
     // Caller is responsible for freeing the bitmap.
     uint8_t* render(const char *input, int width, int height)
     {
+        if (!input || width <= 0 || height <= 0) {
+            return 0;
+        }
         int offset = 0;
         BitBuffer buf;
         if (parse(input, &buf, &offset)) {
@@ -887,6 +890,59 @@ extern "C" {
         Paint_NewImage(bitmap, width, height, 0, WHITE);
         Paint_Clear(WHITE);
         renderBits(buf.buffer, buf.ind);
+        return bitmap;
+    }
+
+    // Allocates a bitmap with size ceil(width * height / 8) and performs dithering of the specified input image.
+    // Caller is responsible for freeing the bitmap.
+    uint8_t* dither(const uint8_t *rgba, int width, int height)
+    {
+        if (!rgba || width <= 0 || height <= 0) {
+            return 0;
+        }
+        float *gray = (float*) malloc(width * height * sizeof(float));
+        if (!gray) {
+            return 0;
+        }
+        for (int i = 0; i < width * height; i++) {
+            gray[i] = 0.2126 * rgba[i*4] + 0.7152 * rgba[i*4+1] + 0.0722 * rgba[i*4+2];
+        }
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                float oldpixel = gray[y * width + x];
+                float newpixel = (oldpixel > 127) ? 255 : 0;
+                gray[y * width + x] = newpixel;
+                float quant_error = oldpixel - newpixel;
+                if (x < width - 1) {
+                    gray[y * width + x + 1] += quant_error * 7.0 / 16.0;
+                }
+                if (x > 0 && y < height - 1) {
+                    gray[(y + 1) * width + x - 1] += quant_error * 3.0 / 16.0;
+                }
+                if (y < height - 1) {
+                    gray[(y + 1) * width + x] += quant_error * 5.0 / 16.0;
+                }
+                if (x < width - 1 && y < height - 1) {
+                    gray[(y + 1) * width + x + 1] += quant_error * 1.0 / 16.0;
+                }
+            }
+        }
+        int length = width * height / 8;
+        if (width * height % 8 != 0) {
+            length += 1;
+        }
+        uint8_t *bitmap = (uint8_t*) malloc(length);
+        if (!bitmap) {
+            free(gray);
+            return 0;
+        }
+        memset(bitmap, 0, length);
+        for (int i = 0; i < width * height; i++) {
+            if (gray[i] < 127) {
+                bitmap[i / 8] |= 1 << (7 - i % 8);
+            }
+        }
+        free(gray);
         return bitmap;
     }
 }

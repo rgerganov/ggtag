@@ -1503,6 +1503,9 @@ var _getLastError = Module["_getLastError"] = createExportWrapper("getLastError"
 var _render = Module["_render"] = createExportWrapper("render");
 
 /** @type {function(...*):?} */
+var _dither = Module["_dither"] = createExportWrapper("dither");
+
+/** @type {function(...*):?} */
 var ___errno_location = Module["___errno_location"] = createExportWrapper("__errno_location");
 
 /** @type {function(...*):?} */

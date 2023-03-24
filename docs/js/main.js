@@ -528,8 +528,16 @@ async function preprocessImages(input)
         let y = match[2];
         ctx.drawImage(img, x, y);
         let imgData = ctx.getImageData(x, y, img.width, img.height);
-        let bitmap = imageDataToBitmap(imgData);
-        let base64 = bitmapToBase64(bitmap);
+        let rgbaArr = imgData.data;
+        let buf = Module._malloc(rgbaArr.length*rgbaArr.BYTES_PER_ELEMENT);
+        Module.HEAPU8.set(rgbaArr, buf);
+        let ditheredPtr = Module.ccall('dither', 'number', ['number', 'number', 'number'], [buf, imgData.width, imgData.height]);
+        Module._free(buf);
+        let ditheredBytes = Math.ceil(canvas.width * canvas.height / 8);
+        let ditheredBitmap = new Uint8Array(Module.HEAP8.buffer, ditheredPtr, ditheredBytes);
+        //let bitmap = imageDataToBitmap(imgData);
+        let base64 = bitmapToBase64(ditheredBitmap);
+        Module._free(ditheredPtr);
         // replace with "\i<x>,<y>,<width>,<height>,<base64_encoded_bitmap>"
         input = input.replace(match[0], `\\i${x},${y},${img.width},${img.height},${base64}`);
     }
