@@ -148,7 +148,7 @@ function onCmdChange() {
         } else if (newCmd == "QR code") {
             remaining = randomInt(1, 4) + "," + randomWord();
         } else if (newCmd == "Image") {
-            remaining = "https://xakcop.com/doomface.png";
+            remaining = "0,0,https://xakcop.com/doomface.png";
         } else if (newCmd == "Icon") {
             remaining = randomInt(16,40) + "," + randomIcon();
         } else if (newCmd == "RFID") {
@@ -478,21 +478,6 @@ async function programSound(input)
     Module._free(ptr);
 }
 
-function imageDataToBitmap(imgData)
-{
-    var bitmap = new Uint8Array(Math.ceil(imgData.width * imgData.height / 8));
-    for (var i = 0; i < imgData.data.length; i += 4) {
-        var bit = 0;
-        if (imgData.data[i] < 128) {
-            bit = 1;
-        }
-        var byte = Math.floor(i / 4 / 8);
-        var bitInByte = 7 - ((i / 4) % 8);
-        bitmap[byte] |= bit << bitInByte;
-    }
-    return bitmap;
-}
-
 function bitmapToBase64(bitmap)
 {
     var base64 = "";
@@ -514,32 +499,49 @@ async function preprocessImages(input)
 {
     const canvas = document.getElementById("ggCanvas");
     const ctx = canvas.getContext("2d", {willReadFrequently: true});
-    // find all image escape sequences "\I<x>,<y>,<url>"
-    let regex = /\\I(\d+),(\d+),([^\\]+)/g;
+    // find all image escape sequences "\I<x>,<y>,<w>,<h><url>"
+    let regex = /\\I(\d+),(\d+),(\d+),(\d+),([^\\]+)/g;
     let match = null;
     while ((match = regex.exec(input)) !== null) {
         try {
-            var img = await loadImage(match[3]);
+            var img = await loadImage(match[5]);
         } catch (e) {
-            console.log("Failed to load image: " + match[3]);
+            console.log("Failed to load image: " + match[5]);
             continue;
         }
         let x = match[1];
         let y = match[2];
-        ctx.drawImage(img, x, y);
-        let imgData = ctx.getImageData(x, y, img.width, img.height);
+        let w = match[3];
+        let h = match[4];
+        if (w == 0) {
+            w = img.width;
+        }
+        if (h == 0) {
+            h = img.height;
+        }
+        ctx.drawImage(img, x, y, w, h);
+        let imgData = ctx.getImageData(x, y, w, h);
         let rgbaArr = imgData.data;
-        let buf = Module._malloc(rgbaArr.length*rgbaArr.BYTES_PER_ELEMENT);
-        Module.HEAPU8.set(rgbaArr, buf);
-        let ditheredPtr = Module.ccall('dither', 'number', ['number', 'number', 'number'], [buf, imgData.width, imgData.height]);
-        Module._free(buf);
-        let ditheredBytes = Math.ceil(canvas.width * canvas.height / 8);
-        let ditheredBitmap = new Uint8Array(Module.HEAP8.buffer, ditheredPtr, ditheredBytes);
-        //let bitmap = imageDataToBitmap(imgData);
+        let rgbaBuf = Module._malloc(rgbaArr.length*rgbaArr.BYTES_PER_ELEMENT);
+        if (rgbaBuf == 0) {
+            console.log("Failed to allocate memory for image: " + match[5]);
+            continue;
+        }
+        Module.HEAPU8.set(rgbaArr, rgbaBuf);
+        // get dithered bitmap from RGBA image
+        let ditheredPtr = Module.ccall('dither', 'number', ['number', 'number', 'number'], [rgbaBuf, imgData.width, imgData.height]);
+        if (ditheredPtr == 0) {
+            console.log("Failed to dither image: " + match[5]);
+            Module._free(rgbaBuf);
+            continue;
+        }
+        Module._free(rgbaBuf);
+        let ditheredLength = Math.ceil(canvas.width * canvas.height / 8);
+        let ditheredBitmap = new Uint8Array(Module.HEAP8.buffer, ditheredPtr, ditheredLength);
         let base64 = bitmapToBase64(ditheredBitmap);
         Module._free(ditheredPtr);
         // replace with "\i<x>,<y>,<width>,<height>,<base64_encoded_bitmap>"
-        input = input.replace(match[0], `\\i${x},${y},${img.width},${img.height},${base64}`);
+        input = input.replace(match[0], `\\i${x},${y},${w},${h},${base64}`);
     }
     //console.log(input);
     return input;
