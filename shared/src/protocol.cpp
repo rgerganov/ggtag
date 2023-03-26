@@ -107,7 +107,8 @@ void renderBits(const uint8_t *input, int bits_count)
                 free(text);
                 break;
             }
-            case RECT_CMD: {
+            case RECT_CMD:
+            case FILL_RECT_CMD: {
                 int x = br.read(X_BITS);
                 int y = br.read(Y_BITS);
                 int w = br.read(X_BITS);
@@ -115,19 +116,22 @@ void renderBits(const uint8_t *input, int bits_count)
                 if (x < 0 || y < 0 || w < 0 || h < 0) {
                     return;
                 }
-                printf("Render rect x=%d y=%d w=%d h=%d\n", x, y, w, h);
-                Paint_DrawRectangle(x, y, x+w, y+h, BLACK, DOT_PIXEL_1X1, DRAW_FILL_EMPTY);
+                DRAW_FILL fill = (cmd == RECT_CMD) ? DRAW_FILL_EMPTY : DRAW_FILL_FULL;
+                printf("Render rect x=%d y=%d w=%d h=%d fill=%d\n", x, y, w, h, fill);
+                Paint_DrawRectangle(x, y, x+w, y+h, BLACK, DOT_PIXEL_1X1, fill);
                 break;
             }
-            case CIRCLE_CMD: {
+            case CIRCLE_CMD:
+            case FILL_CIRCLE_CMD: {
                 int x = br.read(X_BITS);
                 int y = br.read(Y_BITS);
                 int r = br.read(R_BITS);
                 if (x < 0 || y < 0 || r < 0) {
                     return;
                 }
-                printf("Render circle x=%d y=%d r=%d\n", x, y, r);
-                Paint_DrawCircle(x, y, r, BLACK, DOT_PIXEL_1X1, DRAW_FILL_EMPTY);
+                DRAW_FILL fill = (cmd == CIRCLE_CMD) ? DRAW_FILL_EMPTY : DRAW_FILL_FULL;
+                printf("Render circle x=%d y=%d r=%d fill=%d\n", x, y, r, fill);
+                Paint_DrawCircle(x, y, r, BLACK, DOT_PIXEL_1X1, fill);
                 break;
             }
             case LINE_CMD: {

@@ -1,22 +1,26 @@
 "use strict";
 
 const ESC2CMD = {"\\t": "Text",
+                 "\\r": "Rect",
+                 "\\R": "FillRect",
                  "\\c": "Circle",
-                 "\\r": "Rectangle",
+                 "\\C": "FillCircle",
                  "\\l": "Line",
                  "\\q": "QR code",
                  "\\I": "Image",
                  "\\a": "Icon",
                  "\\f": "RFID"}
 
-const CMD2ESC = {"Text":      "\\t",
-                 "Circle":    "\\c",
-                 "Rectangle": "\\r",
-                 "Line":      "\\l",
-                 "QR code":   "\\q",
-                 "Image":     "\\I",
-                 "Icon":      "\\a",
-                 "RFID":      "\\f"}
+const CMD2ESC = {"Text":       "\\t",
+                 "Rect":       "\\r",
+                 "FillRect":   "\\R",
+                 "Circle":     "\\c",
+                 "FillCircle": "\\C",
+                 "Line":       "\\l",
+                 "QR code":    "\\q",
+                 "Image":      "\\I",
+                 "Icon":       "\\a",
+                 "RFID":       "\\f"}
 
 var dragging = false;
 // keeps the initial position when dragging starts
@@ -122,26 +126,36 @@ function onCmdChange() {
     if (newCmd != prevCmd) {
         let xyCoord = "";
         let remaining = "";
+        let prevParts = prevText.split(",");
         if (newCmd != "RFID") {
-            let parts = prevText.split(",");
             let x = randomInt(0, 100);
             let y = randomInt(0, 100);
-            if (parts.length > 1 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+            if (prevParts.length > 1 && !isNaN(prevParts[0]) && !isNaN(prevParts[1])) {
                 // keep the old coordinates if possible
-                x = parseInt(parts[0]);
-                y = parseInt(parts[1]);
+                x = parseInt(prevParts[0]);
+                y = parseInt(prevParts[1]);
             }
             xyCoord = x + "," + y + ",";
         }
         if (newCmd == "Text") {
             let fontNum = randomInt(1, 5);
             remaining = fontNum + "," + randomWord();
-        } else if (newCmd == "Circle") {
-            // random radius
-            remaining = randomInt(10, 50);
-        } else if (newCmd == "Rectangle") {
-            // random width and height
-            remaining = randomInt(20, 60) + "," + randomInt(20, 60);
+        } else if (newCmd == "Circle" || newCmd == "FillCircle") {
+            if (prevCmd == "Circle" || prevCmd == "FillCircle") {
+                // keep the old radius
+                remaining = prevParts[2];
+            } else {
+                // random radius
+                remaining = randomInt(10, 50);
+            }
+        } else if (newCmd == "Rect" || newCmd == "FillRect") {
+            if (prevCmd == "Rect" || prevCmd == "FillRect") {
+                // keep the old width and height
+                remaining = prevParts[2] + "," + prevParts[3];
+            } else {
+                // random width and height
+                remaining = randomInt(20, 60) + "," + randomInt(20, 60);
+            }
         } else if (newCmd == "Line") {
             // random end point
             remaining = randomInt(0, 100) + "," + randomInt(0, 100);

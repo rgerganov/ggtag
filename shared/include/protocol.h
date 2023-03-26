@@ -3,23 +3,27 @@
 #include <stdint.h>
 
 // draw text command
-#define TEXT_CMD     0
+#define TEXT_CMD        0
 // draw rectangle command
-#define RECT_CMD     1
+#define RECT_CMD        1
+// draw filled rectangle command
+#define FILL_RECT_CMD   2
 // draw circle command
-#define CIRCLE_CMD   2
+#define CIRCLE_CMD      3
+// draw filled circle command
+#define FILL_CIRCLE_CMD 4
 // draw line command
-#define LINE_CMD     3
+#define LINE_CMD        5
 // draw qrcode command
-#define QRCODE_CMD   4
+#define QRCODE_CMD      6
 // draw image command
-#define IMAGE_CMD    5
+#define IMAGE_CMD       7
 // draw font awesome icon
-#define ICON_CMD     6
+#define ICON_CMD        8
 // program rfid
-#define RFID_CMD     7
+#define RFID_CMD        9
 
-#define EOF_CMD      8
+#define EOF_CMD         10
 
 // bits for command
 #define CMD_BITS       4

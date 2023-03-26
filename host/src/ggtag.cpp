@@ -243,9 +243,10 @@ struct BitBuffer {
         }
         return true;
     }
-    bool addCmd(const RectCmd &cmd)
+    bool addCmd(const RectCmd &cmd, bool fill)
     {
-        if (!addBits(RECT_CMD, CMD_BITS)) {
+        int cmd_bits = fill ? FILL_RECT_CMD : RECT_CMD;
+        if (!addBits(cmd_bits, CMD_BITS)) {
             return false;
         }
         if (!addBits(cmd.x, X_BITS)) {
@@ -262,9 +263,10 @@ struct BitBuffer {
         }
         return true;
     }
-    bool addCmd(const CircleCmd &cmd)
+    bool addCmd(const CircleCmd &cmd, bool fill)
     {
-        if (!addBits(CIRCLE_CMD, CMD_BITS)) {
+        int cmd_bits = fill ? FILL_CIRCLE_CMD : CIRCLE_CMD;
+        if (!addBits(cmd_bits, CMD_BITS)) {
             return false;
         }
         if (!addBits(cmd.x, X_BITS)) {
@@ -345,8 +347,14 @@ bool parseCommand(const char *input, int *cmd, int *curr_offset)
         case 'r':
             *cmd = RECT_CMD;
             break;
+        case 'R':
+            *cmd = FILL_RECT_CMD;
+            break;
         case 'c':
             *cmd = CIRCLE_CMD;
+            break;
+        case 'C':
+            *cmd = FILL_CIRCLE_CMD;
             break;
         case 'l':
             *cmd = LINE_CMD;
@@ -750,22 +758,24 @@ bool parse(const char *input, BitBuffer *buf, int *curr_offset)
             }
             break;
         case RECT_CMD:
+        case FILL_RECT_CMD:
             RectCmd rect_cmd;
             if (!parseRectCmd(input, &rect_cmd, &offset)) {
                 sprintf(lastError, "Failed to parse Rect command");
                 return false;
             }
-            if (!buf->addCmd(rect_cmd)) {
+            if (!buf->addCmd(rect_cmd, cmd == FILL_RECT_CMD)) {
                 return false;
             }
             break;
         case CIRCLE_CMD:
+        case FILL_CIRCLE_CMD:
             CircleCmd circle_cmd;
             if (!parseCircleCmd(input, &circle_cmd, &offset)) {
                 sprintf(lastError, "Failed to parse Circle command");
                 return false;
             }
-            if (!buf->addCmd(circle_cmd)) {
+            if (!buf->addCmd(circle_cmd, cmd == FILL_CIRCLE_CMD)) {
                 return false;
             }
             break;
