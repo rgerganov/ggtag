@@ -50,14 +50,14 @@ function onRuntimeInitialized()
     const params = new Proxy(new URLSearchParams(window.location.search), {
         get: (searchParams, prop) => searchParams.get(prop),
     });
-    let value = params.s;
-    if (value === "s") {
-        changeSize(document.getElementById("smallRadio"), false);
-        document.getElementById("smallRadio").checked = true;
-    } else if (value === "l") {
-        changeSize(document.getElementById("largeRadio"), false);
-        document.getElementById("largeRadio").checked = true;
-    }
+    // let value = params.s;
+    // if (value === "s") {
+    //     changeSize(document.getElementById("smallRadio"), false);
+    //     document.getElementById("smallRadio").checked = true;
+    // } else if (value === "l") {
+    //     changeSize(document.getElementById("largeRadio"), false);
+    //     document.getElementById("largeRadio").checked = true;
+    // }
     // take the input from the URL and split it into commands
     let input = params.i;
     if (input) {
