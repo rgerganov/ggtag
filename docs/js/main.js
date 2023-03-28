@@ -153,7 +153,7 @@ function onCmdChange() {
         } else if (newCmd == "QR code") {
             remaining = randomInt(1, 4) + "," + randomWord();
         } else if (newCmd == "Image") {
-            remaining = "0,0,https://xakcop.com/doomface.png";
+            remaining = "0,0,https://ggtag.io/mario.png";
         } else if (newCmd == "Icon") {
             remaining = randomInt(16,40) + "," + randomIcon();
         } else if (newCmd == "RFID") {
