@@ -54,9 +54,6 @@ volatile int samplesRead = 0;
 int16_t sampleBufferCur[BUF_SIZE];         // we read new samples in this buffer
 int16_t sampleBuffer[3*SAMPLES_PER_FRAME]; // after that, we queue them in this bigger buffer
 
-GGWave ggwave;
-GGWave::TxRxData result;
-
 #if GGTAG_DEEP_SLEEP == 1
 // In this mode, we use RTC to wake up from deep sleep every few seconds and check if the BOOTSEL button is pressed
 
@@ -247,38 +244,33 @@ void run_from_battery()
         }
     }
 
+    GGWave *ggwave = new GGWave();
+    GGWave::TxRxData result;
     // initialize ggwave
-    {
-        ggwave.setLogFile(nullptr);
-        auto p = GGWave::getDefaultParameters();
-        p.payloadLength   = 16;
-        p.sampleRateInp   = SAMPLE_RATE;
-        p.sampleRateOut   = SAMPLE_RATE;
-        p.sampleRate      = SAMPLE_RATE;
-        p.samplesPerFrame = SAMPLES_PER_FRAME;
-        p.sampleFormatInp = GGWAVE_SAMPLE_FORMAT_I16;
-        p.sampleFormatOut = GGWAVE_SAMPLE_FORMAT_U8;
-        p.operatingMode   = GGWAVE_OPERATING_MODE_RX | GGWAVE_OPERATING_MODE_TX | GGWAVE_OPERATING_MODE_USE_DSS | GGWAVE_OPERATING_MODE_TX_ONLY_TONES;
+    GGWave::setLogFile(nullptr);
+    auto p = GGWave::getDefaultParameters();
+    p.payloadLength   = 16;
+    p.sampleRateInp   = SAMPLE_RATE;
+    p.sampleRateOut   = SAMPLE_RATE;
+    p.sampleRate      = SAMPLE_RATE;
+    p.samplesPerFrame = SAMPLES_PER_FRAME;
+    p.sampleFormatInp = GGWAVE_SAMPLE_FORMAT_I16;
+    p.sampleFormatOut = GGWAVE_SAMPLE_FORMAT_U8;
+    p.operatingMode   = GGWAVE_OPERATING_MODE_RX | GGWAVE_OPERATING_MODE_TX | GGWAVE_OPERATING_MODE_USE_DSS | GGWAVE_OPERATING_MODE_TX_ONLY_TONES;
 
-        GGWave::Protocols::tx().disableAll();
-        GGWave::Protocols::rx().disableAll();
-        GGWave::Protocols::rx().toggle(GGWAVE_PROTOCOL_AUDIBLE_FASTEST, true);
-        //GGWave::Protocols::rx().toggle(GGWAVE_PROTOCOL_MT_NORMAL, true);
-        //GGWave::Protocols::rx().toggle(GGWAVE_PROTOCOL_MT_FAST, true);
-        GGWave::Protocols::rx().toggle(GGWAVE_PROTOCOL_MT_FASTEST, true);
-        //GGWave::Protocols::rx().toggle(GGWAVE_PROTOCOL_DT_NORMAL, true);
-        //GGWave::Protocols::rx().toggle(GGWAVE_PROTOCOL_DT_FAST, true);
-        GGWave::Protocols::rx().toggle(GGWAVE_PROTOCOL_DT_FASTEST, true);
-        //GGWave::Protocols::rx().toggle(GGWAVE_PROTOCOL_ULTRASOUND_FASTEST, true);
-        // Print the memory required for the "ggwave" instance:
-        ggwave.prepare(p, false);
-        printf("Required memory by the ggwave instance: %d\n", ggwave.heapSize());
-        if (!ggwave.prepare(p, true)) {
-            printf("ggwave initialization failed\n");
-            while (1) { tight_loop_contents(); }
-        }
-        printf("ggwave initialized successfully\n");
-    }
+    GGWave::Protocols::tx().disableAll();
+    GGWave::Protocols::rx().disableAll();
+    GGWave::Protocols::rx().toggle(GGWAVE_PROTOCOL_AUDIBLE_FASTEST, true);
+    //GGWave::Protocols::rx().toggle(GGWAVE_PROTOCOL_MT_NORMAL, true);
+    //GGWave::Protocols::rx().toggle(GGWAVE_PROTOCOL_MT_FAST, true);
+    GGWave::Protocols::rx().toggle(GGWAVE_PROTOCOL_MT_FASTEST, true);
+    //GGWave::Protocols::rx().toggle(GGWAVE_PROTOCOL_DT_NORMAL, true);
+    //GGWave::Protocols::rx().toggle(GGWAVE_PROTOCOL_DT_FAST, true);
+    GGWave::Protocols::rx().toggle(GGWAVE_PROTOCOL_DT_FASTEST, true);
+    //GGWave::Protocols::rx().toggle(GGWAVE_PROTOCOL_ULTRASOUND_FASTEST, true);
+    // Print the memory required for the "ggwave" instance:
+    ggwave->prepare(p, false);
+    printf("Required memory by the ggwave instance: %d\n", ggwave->heapSize());
 
 #if GGTAG_DEEP_SLEEP == 1
     rtc_init();
@@ -296,6 +288,14 @@ void run_from_battery()
     while (1) {
         // init mic and listen for AWAKE_RUN_S seconds
         if (listen) {
+            if (ggwave == NULL) {
+                ggwave = new GGWave();
+            }
+            if (!ggwave->prepare(p, true)) {
+                printf("ggwave initialization failed\n");
+                while (1) { tight_loop_contents(); }
+            }
+            printf("ggwave initialized successfully\n");
             printf("Listening for %d seconds\n", AWAKE_RUN_S);
 
             // initialize the PDM microphone
@@ -314,12 +314,15 @@ void run_from_battery()
             }
 
             int totalSamples = 0;
+            // listen for AWAKE_RUN_S seconds max unless we receive data
+            int maxSamples = AWAKE_RUN_S*SAMPLE_RATE;
             int niter = 0;
             int sampleCount = 0;
             int offset = 0;
-            uint8_t data[256] = {0};
+            uint8_t *data = NULL;
+            int dataLength = 0;
 
-            while (totalSamples < AWAKE_RUN_S*SAMPLE_RATE) {
+            while (totalSamples < maxSamples) {
                 // wait for new samples
                 while (samplesRead == 0) { tight_loop_contents(); }
                 // store and clear the samples read from the callback
@@ -333,7 +336,7 @@ void run_from_battery()
                 while (sampleCount >= SAMPLES_PER_FRAME) {
                     auto tStart = to_ms_since_boot(get_absolute_time());
                     //printf("trying to decode... sampleCount = %d\n", sampleCount);
-                    ggwave.decode(sampleBuffer, SAMPLES_PER_FRAME*sizeof(int16_t));
+                    ggwave->decode(sampleBuffer, SAMPLES_PER_FRAME*sizeof(int16_t));
                     auto tEnd = to_ms_since_boot(get_absolute_time());
                     if (++niter % 10 == 0) {
                         printf("time: %d\n", tEnd - tStart);
@@ -344,22 +347,33 @@ void run_from_battery()
                     }
 
                     // Check if we have successfully decoded any data:
-                    int nr = ggwave.rxTakeData(result);
+                    int nr = ggwave->rxTakeData(result);
                     if (nr > 0) {
                         // check if the received data is different from the previous one
                         if (memcmp(lastData, result.data(), nr) != 0) {
+                            // extend listening time
+                            maxSamples = totalSamples + AWAKE_RUN_S*SAMPLE_RATE;
                             printf("Received %d bytes\n", nr);
+                            if (data == NULL) {
+                                // the first two bytes are the total length of the data
+                                int l1 = result.data()[0];
+                                int l2 = result.data()[1];
+                                dataLength = l1*256 + l2;
+                                printf("Data length: %d\n", dataLength);
+                                data = (uint8_t *)malloc(dataLength);
+                                if (data == NULL) {
+                                    printf("Failed to allocate memory\n");
+                                    break;
+                                }
+                            }
                             memcpy(data + offset, result.data(), nr);
                             offset += nr;
                             memcpy(lastData, result.data(), nr);
                         }
-                        // the first two bytes are the total length of the data
-                        // but we don't support more than 255 bytes when using sound
-                        int dataLength = data[1];
                         // if we have received all the data, don't wait for more
                         if (offset >= dataLength + 2) {
                             printf("Received all %d bytes\n", dataLength);
-                            totalSamples = AWAKE_RUN_S*SAMPLE_RATE;
+                            maxSamples = totalSamples;
                             break;
                         }
                     }
@@ -372,14 +386,21 @@ void run_from_battery()
                 }
             }
 
+            printf("Deallocate ggwave\n");
+            delete ggwave;
+            ggwave = NULL;
+
             // display the data that has been received
-            if (offset > 0) {
+            if (dataLength > 0) {
                 printf("Drawing\n");
                 EPD_Init();
                 Paint_NewImage(img, EPD_WIDTH, EPD_HEIGHT, 90, WHITE);
                 Paint_Clear(WHITE);
-                renderBits(data+2, data[1]*8);
+                renderBits(data+2, dataLength*8);
                 EPD_Display(img, NULL);
+                free(data);
+                data = NULL;
+                dataLength = 0;
                 // put the display to sleep
                 EPD_Sleep();
             }

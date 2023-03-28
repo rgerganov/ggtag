@@ -95,7 +95,13 @@ function getInput() {
 async function repaint() {
     let inp = getInput();
     inp = await preprocessImages(inp);
-    //console.log(inp);
+    let data = encodeInput(inp);
+    if (data.length > 256) {
+        let duration = Math.ceil(data.length / 33);
+        $('#soundLabel').text('Sound (~' + duration + ' sec.)');
+    } else {
+        $('#soundLabel').text('Sound');
+    }
     render(inp);
 }
 
@@ -220,21 +226,6 @@ async function onShare() {
         }
     } else if (navigator.clipboard) {
         navigator.clipboard.writeText(url);
-    }
-}
-
-function changeSize(radio, doRepaint=true)
-{
-    let canvas = document.getElementById("ggCanvas");
-    if (radio.value == "small") {
-        canvas.width = 250;
-        canvas.height = 122;
-    } else if (radio.value == "large") {
-        canvas.width = 360;
-        canvas.height = 240;
-    }
-    if (doRepaint) {
-        repaint();
     }
 }
 
@@ -373,19 +364,28 @@ async function readSerialOutput(port)
     return result;
 }
 
-async function programSerial(input)
+function encodeInput(input)
 {
-    console.log("Programming over serial port");
     let lengthPtr = Module._malloc(4);
     let ptr = Module.ccall('encode', 'number', ['string', 'number'], [input, lengthPtr]);
     if (ptr == 0) {
         Module._free(lengthPtr);
-        return;
+        return null;
     }
     let length = Module.getValue(lengthPtr, 'i32');
-    console.log("Encoded data length: " + length);
     Module._free(lengthPtr);
     let data = new Uint8Array(Module.HEAPU8.buffer, ptr, length);
+    // make a copy and free the memory
+    let result = new Uint8Array(data);
+    Module._free(ptr);
+    return result;
+}
+
+async function programSerial(input)
+{
+    console.log("Programming over serial port");
+    let data = encodeInput(input);
+    console.log("Encoded data length: " + data.length);
     console.log("Encoded data: " + data);
 
     let port = {};
@@ -407,7 +407,6 @@ async function programSerial(input)
     let result = await closedPromise;
     await port.close();
     console.log("All done, result: " + result);
-    Module._free(ptr);
 }
 
 let ggwave = null;
@@ -420,20 +419,8 @@ let ggwaveInstance = null;
 async function programSound(input)
 {
     console.log("Programming over sound");
-    let lengthPtr = Module._malloc(4);
-    let ptr = Module.ccall('encode', 'number', ['string', 'number'], [input, lengthPtr]);
-    if (ptr == 0) {
-        Module._free(lengthPtr);
-        return;
-    }
-    let length = Module.getValue(lengthPtr, 'i32');
-    console.log("Encoded data length: " + length);
-    Module._free(lengthPtr);
-    if (length > 256) {
-        Module._free(ptr);
-        throw "The maximum data length when using sound is 256 bytes";
-    }
-    let data = new Uint8Array(Module.HEAPU8.buffer, ptr, length);
+    let data = encodeInput(input);
+    console.log("Encoded data length: " + data.length);
     console.log("Encoded data: " + data);
 
     if (audioContext == null) {
@@ -481,7 +468,6 @@ async function programSound(input)
     tx();
     await promise;
     console.log("All done");
-    Module._free(ptr);
 }
 
 function bitmapToBase64(bitmap)
@@ -504,7 +490,6 @@ const loadImage = (url) => new Promise((resolve, reject) => {
 async function preprocessImages(input)
 {
     const canvas = document.getElementById("ggCanvas");
-    const ctx = canvas.getContext("2d", {willReadFrequently: true});
     // find all image escape sequences "\I<x>,<y>,<w>,<h><url>"
     let regex = /\\I(\d+),(\d+),(\d+),(\d+),([^\\]+)/g;
     let match = null;
@@ -525,8 +510,10 @@ async function preprocessImages(input)
         if (h == 0) {
             h = img.height;
         }
-        ctx.drawImage(img, x, y, w, h);
-        let imgData = ctx.getImageData(x, y, w, h);
+        let tempCanvas = new OffscreenCanvas(w, h);
+        let tempCtx = tempCanvas.getContext("2d");
+        tempCtx.drawImage(img, 0, 0, w, h);
+        let imgData = tempCtx.getImageData(0, 0, w, h);
         let rgbaArr = imgData.data;
         let rgbaBuf = Module._malloc(rgbaArr.length*rgbaArr.BYTES_PER_ELEMENT);
         if (rgbaBuf == 0) {
