@@ -1,3 +1,4 @@
+import base64
 import cggtag
 
 class GGTag(object):
@@ -6,25 +7,44 @@ class GGTag(object):
         self._height = height
         self._text_cmd = ""
 
+    def _check_xy(self, x, y):
+        if x < 0 or x > self._width:
+            raise ValueError("x must be in range [0, {}]".format(self._width))
+        if y < 0 or y > self._height:
+            raise ValueError("y must be in range [0, {}]".format(self._height))
+
     def text(self, x, y, font_size, text):
+        self._check_xy(x, y)
         self._text_cmd += "\\t{},{},{},{}".format(x, y, font_size, text)
 
     def circle(self, x, y, radius):
+        self._check_xy(x, y)
         self._text_cmd += "\\c{},{},{}".format(x, y, radius)
 
     def rect(self, x, y, width, height):
+        self._check_xy(x, y)
         self._text_cmd += "\\r{},{},{},{}".format(x, y, width, height)
 
     def line(self, x1, y1, x2, y2):
+        self._check_xy(x1, y1)
         self._text_cmd += "\\l{},{},{},{}".format(x1, y1, x2, y2)
 
     def qrcode(self, x, y, size, text):
+        self._check_xy(x, y)
         self._text_cmd += "\\q{},{},{},{}".format(x, y, size, text)
 
-    def image(self, x, y, width, height, image):
+    def image(self, x, y, width, height, rgba_image):
+        self._check_xy(x, y)
+        bitmap = cggtag.dither(rgba_image, width, height)
+        image = base64.b64encode(bitmap).decode("utf-8")
         self._text_cmd += "\\i{},{},{},{},{}".format(x, y, width, height, image)
 
+    def image_url(self, x, y, width, height, url):
+        self._check_xy(x, y)
+        self._text_cmd += "\\I{},{},{},{},{}".format(x, y, width, height, url)
+
     def icon(self, x, y, height, icon_name):
+        self._check_xy(x, y)
         self._text_cmd += "\\a{},{},{},{}".format(x, y, height, icon_name)
 
     def rfid(self, id1, id2, is_em4102=True):

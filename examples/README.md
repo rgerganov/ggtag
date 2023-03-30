@@ -13,7 +13,7 @@ pip install -r requirements.txt
 ```
 
 # `demo.py`
-This scripts creates a demo tag using the `ggtag` API:
+This script creates a demo tag using the `ggtag` API:
 ```python
 # Create a demo tag
 def create_tag():
@@ -41,4 +41,12 @@ $ ./demo.py browser
 To save the tag in PNG and ASCII:
 ```
 $ ./demo.py save
+```
+# `img.py`
+Creates a tag with PNG image specified either as local file or URL:
+```
+# Create a tag with PNG image specified as local file
+$ ./img.py mario.png
+# Create a tag with PNG image specified as URL
+$ ./img.py 'https://ggtag.io/mario.png'
 ```

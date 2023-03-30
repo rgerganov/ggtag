@@ -2,6 +2,7 @@
 #include <cstring>
 #include <cstdio>
 #include <cstdint>
+#include "ggtag.h"
 #include "utils.h"
 #include "protocol.h"
 #include "GUI_Paint.h"
@@ -835,126 +836,124 @@ bool parse(const char *input, BitBuffer *buf, int *curr_offset)
     return parse(input, buf, &offset);
 }
 
-extern "C" {
-    // Allocates a buffer and encodes the input string into it. The buffer length is returned in 'length'.
-    // Caller is responsible for freeing the buffer.
-    uint8_t* encode(const char *input, int *length)
-    {
-        BitBuffer buf;
-        int offset = 0;
-        if (parse(input, &buf, &offset)) {
-            // clear the error message if parsing was successful
-            sprintf(lastError, "OK");
-        }
-        if (buf.size() == 0) {
-            return 0;
-        }
-        //buf.dumpBytes();
-        uint8_t *ret = (uint8_t*) calloc(buf.size()+2, 1);
-        if (!ret) {
-            return 0;
-        }
-        // the first two byte are the total length of the encoded data
-        ret[0] = buf.size() / 256;
-        ret[1] = buf.size() % 256;
-        // followed by the encoded data
-        memcpy(ret+2, buf.buffer, buf.size());
-        *length = buf.size() + 2;
-        return ret;
+// Allocates a buffer and encodes the input string into it. The buffer length is returned in 'length'.
+// Caller is responsible for freeing the buffer.
+uint8_t* encode(const char *input, int *length)
+{
+    BitBuffer buf;
+    int offset = 0;
+    if (parse(input, &buf, &offset)) {
+        // clear the error message if parsing was successful
+        sprintf(lastError, "OK");
     }
-
-    // Returns the last error message from the parser.
-    // The memory is owned by the parser and should not be freed.
-    char* getLastError()
-    {
-        return lastError;
+    if (buf.size() == 0) {
+        return 0;
     }
-
-    // Allocates a bitmap with dimensions [ceil(width/8), height] and renders the specified input string to it.
-    // Caller is responsible for freeing the bitmap.
-    uint8_t* render(const char *input, int width, int height)
-    {
-        if (!input || width <= 0 || height <= 0) {
-            return 0;
-        }
-        int offset = 0;
-        BitBuffer buf;
-        if (parse(input, &buf, &offset)) {
-            // clear the error message if parsing was successful
-            sprintf(lastError, "OK");
-        }
-        if (buf.size() == 0) {
-            return 0;
-        }
-        printf("Bit buffer length: %d\n", buf.ind);
-        int w = width / 8;
-        if (width % 8 != 0) {
-            w += 1;
-        }
-        int total = w * height;
-        uint8_t *bitmap = (uint8_t*) malloc(total);
-        if (!bitmap) {
-            return 0;
-        }
-        memset(bitmap, 0, total);
-        Paint_NewImage(bitmap, width, height, 0, WHITE);
-        Paint_Clear(WHITE);
-        renderBits(buf.buffer, buf.ind);
-        return bitmap;
+    //buf.dumpBytes();
+    uint8_t *ret = (uint8_t*) calloc(buf.size()+2, 1);
+    if (!ret) {
+        return 0;
     }
+    // the first two byte are the total length of the encoded data
+    ret[0] = buf.size() / 256;
+    ret[1] = buf.size() % 256;
+    // followed by the encoded data
+    memcpy(ret+2, buf.buffer, buf.size());
+    *length = buf.size() + 2;
+    return ret;
+}
 
-    // Allocates a bitmap with size ceil(width * height / 8) and performs dithering of the specified input image.
-    // Caller is responsible for freeing the bitmap.
-    uint8_t* dither(const uint8_t *rgba, int width, int height)
-    {
-        if (!rgba || width <= 0 || height <= 0) {
-            return 0;
-        }
-        float *gray = (float*) malloc(width * height * sizeof(float));
-        if (!gray) {
-            return 0;
-        }
-        for (int i = 0; i < width * height; i++) {
-            gray[i] = 0.2126 * rgba[i*4] + 0.7152 * rgba[i*4+1] + 0.0722 * rgba[i*4+2];
-        }
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                float oldpixel = gray[y * width + x];
-                float newpixel = (oldpixel > 127) ? 255 : 0;
-                gray[y * width + x] = newpixel;
-                float quant_error = oldpixel - newpixel;
-                if (x < width - 1) {
-                    gray[y * width + x + 1] += quant_error * 7.0 / 16.0;
-                }
-                if (x > 0 && y < height - 1) {
-                    gray[(y + 1) * width + x - 1] += quant_error * 3.0 / 16.0;
-                }
-                if (y < height - 1) {
-                    gray[(y + 1) * width + x] += quant_error * 5.0 / 16.0;
-                }
-                if (x < width - 1 && y < height - 1) {
-                    gray[(y + 1) * width + x + 1] += quant_error * 1.0 / 16.0;
-                }
+// Returns the last error message from the parser.
+// The memory is owned by the parser and should not be freed.
+char* getLastError()
+{
+    return lastError;
+}
+
+// Allocates a bitmap with dimensions [ceil(width/8), height] and renders the specified input string to it.
+// Caller is responsible for freeing the bitmap.
+uint8_t* render(const char *input, int width, int height)
+{
+    if (!input || width <= 0 || height <= 0) {
+        return 0;
+    }
+    int offset = 0;
+    BitBuffer buf;
+    if (parse(input, &buf, &offset)) {
+        // clear the error message if parsing was successful
+        sprintf(lastError, "OK");
+    }
+    if (buf.size() == 0) {
+        return 0;
+    }
+    printf("Bit buffer length: %d\n", buf.ind);
+    int w = width / 8;
+    if (width % 8 != 0) {
+        w += 1;
+    }
+    int total = w * height;
+    uint8_t *bitmap = (uint8_t*) malloc(total);
+    if (!bitmap) {
+        return 0;
+    }
+    memset(bitmap, 0, total);
+    Paint_NewImage(bitmap, width, height, 0, WHITE);
+    Paint_Clear(WHITE);
+    renderBits(buf.buffer, buf.ind);
+    return bitmap;
+}
+
+// Allocates a bitmap with size ceil(width * height / 8) and performs dithering of the specified input image.
+// Caller is responsible for freeing the bitmap.
+uint8_t* dither(const uint8_t *rgba, int width, int height)
+{
+    if (!rgba || width <= 0 || height <= 0) {
+        return 0;
+    }
+    float *gray = (float*) malloc(width * height * sizeof(float));
+    if (!gray) {
+        return 0;
+    }
+    for (int i = 0; i < width * height; i++) {
+        gray[i] = 0.2126 * rgba[i*4] + 0.7152 * rgba[i*4+1] + 0.0722 * rgba[i*4+2];
+    }
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            float oldpixel = gray[y * width + x];
+            float newpixel = (oldpixel > 127) ? 255 : 0;
+            gray[y * width + x] = newpixel;
+            float quant_error = oldpixel - newpixel;
+            if (x < width - 1) {
+                gray[y * width + x + 1] += quant_error * 7.0 / 16.0;
+            }
+            if (x > 0 && y < height - 1) {
+                gray[(y + 1) * width + x - 1] += quant_error * 3.0 / 16.0;
+            }
+            if (y < height - 1) {
+                gray[(y + 1) * width + x] += quant_error * 5.0 / 16.0;
+            }
+            if (x < width - 1 && y < height - 1) {
+                gray[(y + 1) * width + x + 1] += quant_error * 1.0 / 16.0;
             }
         }
-        int length = width * height / 8;
-        if (width * height % 8 != 0) {
-            length += 1;
-        }
-        uint8_t *bitmap = (uint8_t*) malloc(length);
-        if (!bitmap) {
-            free(gray);
-            return 0;
-        }
-        memset(bitmap, 0, length);
-        for (int i = 0; i < width * height; i++) {
-            if (gray[i] < 127) {
-                bitmap[i / 8] |= 1 << (7 - i % 8);
-            }
-        }
+    }
+    int length = width * height / 8;
+    if (width * height % 8 != 0) {
+        length += 1;
+    }
+    uint8_t *bitmap = (uint8_t*) malloc(length);
+    if (!bitmap) {
         free(gray);
-        return bitmap;
+        return 0;
     }
+    memset(bitmap, 0, length);
+    for (int i = 0; i < width * height; i++) {
+        if (gray[i] < 127) {
+            bitmap[i / 8] |= 1 << (7 - i % 8);
+        }
+    }
+    free(gray);
+    return bitmap;
 }
 
 int main(int argc, char *argv[])

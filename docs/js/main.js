@@ -8,6 +8,7 @@ const ESC2CMD = {"\\t": "Text",
                  "\\l": "Line",
                  "\\q": "QR code",
                  "\\I": "Image",
+                 "\\i": "B64Image",
                  "\\a": "Icon",
                  "\\f": "RFID"}
 
@@ -19,6 +20,7 @@ const CMD2ESC = {"Text":       "\\t",
                  "Line":       "\\l",
                  "QR code":    "\\q",
                  "Image":      "\\I",
+                 "B64Image":   "\\i",
                  "Icon":       "\\a",
                  "RFID":       "\\f"}
 

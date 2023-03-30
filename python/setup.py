@@ -2,7 +2,7 @@ from distutils.core import setup, Extension
 
 def main():
     setup(name="ggtag",
-          version="0.0.4",
+          version="0.0.5",
           description="Python bindings for ggtag",
           long_description="Python bindings for ggtag",
           author="Radoslav Gerganov",
