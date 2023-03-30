@@ -1,5 +1,7 @@
 import base64
 import cggtag
+import urllib.parse
+import webbrowser
 
 class GGTag(object):
     def __init__(self, width=360, height=240):
@@ -63,6 +65,10 @@ class GGTag(object):
                 bit = 0x80 >> (col % 8)
                 result[row][col] = 1 if byte & bit else 0
         return result
+
+    def browse(self, host='https://ggtag.io'):
+        url = "{}/?i={}".format(host, urllib.parse.quote(self._text_cmd, safe=''))
+        webbrowser.open(url)
 
     def __bytes__(self):
         return cggtag.encode(self._text_cmd)

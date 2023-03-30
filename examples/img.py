@@ -3,7 +3,6 @@ import png
 import ggtag
 import urllib.parse
 import urllib.request
-import webbrowser
 import argparse
 
 if __name__ == "__main__":
@@ -25,10 +24,7 @@ if __name__ == "__main__":
         rgba += bytes(row)
     tag = ggtag.GGTag()
     tag.image(10, 10, width, height, rgba)
-    text_cmds = str(tag)
-    url = "https://ggtag.io/?i={}".format(urllib.parse.quote(text_cmds, safe=''))
-    print("Opening URL: {}".format(url))
-    webbrowser.open(url)
+    tag.browse()
     print("Saving tag to ggtag.png")
     bitmap = tag.render()
     w = png.Writer(len(bitmap[0]), len(bitmap), greyscale=True, bitdepth=1)

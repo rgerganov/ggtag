@@ -3,8 +3,6 @@ import png
 import ggtag
 import ggwave
 import pyaudio
-import webbrowser
-import urllib.parse
 import serial
 import argparse
 
@@ -77,13 +75,6 @@ def program_serial(tag, port):
             break
     ser.close()
 
-# Open the tag in the browser
-def open_in_browser(tag):
-    text_cmds = str(tag)
-    url = "https://ggtag.io/?i={}".format(urllib.parse.quote(text_cmds, safe=''))
-    print("Opening URL: {}".format(url))
-    webbrowser.open(url)
-
 # Save the tag to a PNG file
 def save_to_png(tag, fname):
     bitmap = tag.render()
@@ -117,7 +108,7 @@ if __name__ == '__main__':
     elif args.cmd == 'serial':
         program_serial(tag, args.port)
     elif args.cmd == 'browser':
-        open_in_browser(tag)
+        tag.browse()
     elif args.cmd == 'save':
         save_to_png(tag, args.fname + '.png')
         save_to_ascii(tag, args.fname + '.txt')
