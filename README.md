@@ -1,6 +1,6 @@
 [![Build Status](https://github.com/rgerganov/ggtag/workflows/CI/badge.svg)](https://github.com/rgerganov/ggtag/actions)
 # Overview
-![logo](/docs/ggtag-192x192.png)
+![logo](/docs/ggtag-96x96.png)
 
 `ggtag` is an electronic tag that can be programmed with sound using the [ggwave](https://github.com/ggerganov/ggwave) library.
 It is powered by the RP2040 microcontroller and uses Waveshare compatible e-paper display.
