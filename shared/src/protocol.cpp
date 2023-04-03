@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "rfid.h"
+#include "debug.h"
 #include "protocol.h"
 #include "GUI_Paint.h"
 #define STB_TRUETYPE_IMPLEMENTATION
@@ -92,7 +93,7 @@ void renderBits(const uint8_t *input, int bits_count)
                     text[i] = ch;
                 }
                 text[length] = 0;
-                printf("Render x=%d y=%d font=%d text=%s\n", x, y, fontNum, text);
+                debug("Render x=%d y=%d font=%d text=%s\n", x, y, fontNum, text);
                 sFONT* font = &Font8;
                 if (fontNum == 1) {
                     font = &Font12;
@@ -117,7 +118,7 @@ void renderBits(const uint8_t *input, int bits_count)
                     return;
                 }
                 DRAW_FILL fill = (cmd == RECT_CMD) ? DRAW_FILL_EMPTY : DRAW_FILL_FULL;
-                printf("Render rect x=%d y=%d w=%d h=%d fill=%d\n", x, y, w, h, fill);
+                debug("Render rect x=%d y=%d w=%d h=%d fill=%d\n", x, y, w, h, fill);
                 Paint_DrawRectangle(x, y, x+w, y+h, BLACK, DOT_PIXEL_1X1, fill);
                 break;
             }
@@ -130,7 +131,7 @@ void renderBits(const uint8_t *input, int bits_count)
                     return;
                 }
                 DRAW_FILL fill = (cmd == CIRCLE_CMD) ? DRAW_FILL_EMPTY : DRAW_FILL_FULL;
-                printf("Render circle x=%d y=%d r=%d fill=%d\n", x, y, r, fill);
+                debug("Render circle x=%d y=%d r=%d fill=%d\n", x, y, r, fill);
                 Paint_DrawCircle(x, y, r, BLACK, DOT_PIXEL_1X1, fill);
                 break;
             }
@@ -142,7 +143,7 @@ void renderBits(const uint8_t *input, int bits_count)
                 if (x1 < 0 || y1 < 0 || x2 < 0 || y2 < 0) {
                     return;
                 }
-                printf("Render line x1=%d y1=%d x2=%d y2=%d\n", x1, y1, x2, y2);
+                debug("Render line x1=%d y1=%d x2=%d y2=%d\n", x1, y1, x2, y2);
                 Paint_DrawLine(x1, y1, x2, y2, BLACK, DOT_PIXEL_1X1, LINE_STYLE_SOLID);
                 break;
             }
@@ -160,7 +161,7 @@ void renderBits(const uint8_t *input, int bits_count)
                     text[i] = ch;
                 }
                 text[length] = 0;
-                printf("Render qrcode x=%d y=%d text=%s\n", x, y, text);
+                debug("Render qrcode x=%d y=%d text=%s\n", x, y, text);
                 DOT_PIXEL dot_pixel = DOT_PIXEL_1X1;
                 if (pixel_width == 1) {
                     dot_pixel = DOT_PIXEL_2X2;
@@ -181,7 +182,7 @@ void renderBits(const uint8_t *input, int bits_count)
                 if (x < 0 || y < 0 || width < 0 || height < 0) {
                     return;
                 }
-                printf("Render image x=%d y=%d width=%d height=%d\n", x, y, width, height);
+                debug("Render image x=%d y=%d width=%d height=%d\n", x, y, width, height);
                 for (int i = 0; i < height; i++) {
                     for (int j = 0; j < width; j++) {
                         int color = br.read(1);
@@ -201,7 +202,7 @@ void renderBits(const uint8_t *input, int bits_count)
                 if (codepoint < 0 || x < 0 || y < 0 || height < 0) {
                     return;
                 }
-                printf("Render icon codepoint=%x x=%d y=%d height=%d\n", codepoint, x, y, height);
+                debug("Render icon codepoint=%x x=%d y=%d height=%d\n", codepoint, x, y, height);
                 int w, h;
                 uint8_t *cp = renderCodepoint(codepoint, height, &w, &h);
                 BitReader br(cp, w * h);
@@ -223,10 +224,10 @@ void renderBits(const uint8_t *input, int bits_count)
                 uint16_t id1 = br.read(RFID1_BITS);
                 uint32_t id2 = br.read(RFID2_BITS);
                 if (is_hid) {
-                    printf("Programming HID id1=%x id2=%x\n", id1, id2);
+                    debug("Programming HID id1=%x id2=%x\n", id1, id2);
                     program_hid_rfid(id1, id2);
                 } else {
-                    printf("Programming EM4102 mfr_id=%x uid=%x\n", id1, id2);
+                    debug("Programming EM4102 mfr_id=%x uid=%x\n", id1, id2);
                     program_em_rfid(id1, id2);
                 }
                 break;

@@ -75,6 +75,9 @@ function onRuntimeInitialized()
             $(row).find("input[type=text]").val(text);
         }
     }
+    if (params.d) {
+        Module.ccall('debugEnable', null, ['number'], [1]);
+    }
     repaint();
 }
 

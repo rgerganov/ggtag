@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "rfid.h"
+#include "debug.h"
 #include "pico/stdlib.h"
 #include "hardware/spi.h"
 #include "hardware/clocks.h"
@@ -230,7 +231,7 @@ static void blink_pin_start(PIO pio, uint sm, uint offset, uint pin, uint freq) 
     blink_program_init(pio, sm, offset, pin);
     pio_sm_set_enabled(pio, sm, true);
 
-    printf("Blinking pin %d at %d Hz\n", pin, freq);
+    debug("Blinking pin %d at %d Hz\n", pin, freq);
 
     // PIO counter program takes 3 more cycles in total than we pass as
     // input (wait for n + 1; mov; jmp)
@@ -373,10 +374,10 @@ static bool flash_program(int prog_size)
 {
     PIO pio = pio1;
     uint offset = pio_add_program(pio, &blink_program);
-    printf("Loaded program at %d\n", offset);
+    debug("Loaded blink program at %d\n", offset);
     blink_pin_start(pio, 0, offset, 6, 1000000);
 
-    printf("Programming attiny85\n");
+    debug("Programming attiny85\n");
     spi_init(spi0, 100000);
     // SCK = GP2, MOSI = GP3, MISO = GP4, RESET = GP5
     gpio_set_function(2, GPIO_FUNC_SPI);
@@ -385,36 +386,36 @@ static bool flash_program(int prog_size)
     gpio_init(5);
     gpio_set_dir(5, GPIO_OUT);
 
-    printf("start pmode\n");
+    debug("start pmode\n");
     prog_enable();
-    printf("erasing chip\n");
+    debug("erasing chip\n");
     erase_chip();
 
-    printf("start pmode\n");
+    debug("start pmode\n");
     prog_enable();
 
     uint8_t sig[3];
-    printf("read device signature\n");
+    debug("read device signature\n");
     read_signature(sig);
     if (sig[0] != 0x1E || sig[1] != 0x93 || sig[2] != 0x0B) {
         printf("signature mismatch\n");
         return false;
     }
 
-    printf("writing lfuse\n");
+    debug("writing lfuse\n");
     write_lfuse(0xC0);
     //write_lfuse(0x62);
 
-    printf("reading lfuse\n");
-    printf("lfuse: %02x\n", read_lfuse());
+    debug("reading lfuse\n");
+    debug("lfuse: %02x\n", read_lfuse());
 
-    printf("writing flash\n");
+    debug("writing flash\n");
     write_flash(prog, prog_size);
 
     //printf("reading flash\n");
     //flash_read_page(0);
 
-    printf("end pmode\n");
+    debug("end pmode\n");
     gpio_init(3);
     gpio_set_dir(3, GPIO_IN);
     reset_target(false);

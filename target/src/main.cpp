@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "debug.h"
 #include "protocol.h"
 #include "ggwave/ggwave.h"
 
@@ -248,7 +249,6 @@ void run_from_battery()
 
     // initialize ggwave
     {
-        printf("Hello, this is ggtag!\n");
         ggwave.setLogFile(nullptr);
         auto p = GGWave::getDefaultParameters();
         p.payloadLength   = 16;
@@ -413,7 +413,7 @@ void run_from_usb()
     while (!stdio_usb_connected()) {
         tight_loop_contents();
     }
-    printf("EPD module init\n");
+    debug("EPD module init\n");
     if(DEV_Module_Init() != 0) {
         printf("EPD module init failed\n");
         while (1) { tight_loop_contents(); }
@@ -446,7 +446,7 @@ void run_from_usb()
             data[i] = getchar_timeout_us(1000);
         }
         EPD_Init();
-        printf("Drawing\n");
+        debug("Drawing\n");
         Paint_NewImage(img, EPD_WIDTH, EPD_HEIGHT, 90, WHITE);
         Paint_Clear(WHITE);
         renderBits(data, length*8);
@@ -460,6 +460,7 @@ void run_from_usb()
 }
 
 int main(void) {
+    //debugEnable(true);
     gpio_init(USB_CHECK_PIN);
     gpio_set_dir(USB_CHECK_PIN, GPIO_IN);
     if (gpio_get(USB_CHECK_PIN)) {

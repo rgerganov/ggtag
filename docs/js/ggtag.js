@@ -1494,6 +1494,9 @@ var _malloc = Module["_malloc"] = createExportWrapper("malloc");
 var _free = Module["_free"] = createExportWrapper("free");
 
 /** @type {function(...*):?} */
+var _debugEnable = Module["_debugEnable"] = createExportWrapper("debugEnable");
+
+/** @type {function(...*):?} */
 var _encode = Module["_encode"] = createExportWrapper("encode");
 
 /** @type {function(...*):?} */

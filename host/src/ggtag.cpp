@@ -2,6 +2,7 @@
 #include <cstring>
 #include <cstdio>
 #include <cstdint>
+#include "debug.h"
 #include "ggtag.h"
 #include "utils.h"
 #include "protocol.h"
@@ -886,7 +887,7 @@ uint8_t* render(const char *input, int width, int height)
     if (buf.size() == 0) {
         return 0;
     }
-    printf("Bit buffer length: %d\n", buf.ind);
+    debug("Bit buffer length: %d\n", buf.ind);
     int w = width / 8;
     if (width % 8 != 0) {
         w += 1;

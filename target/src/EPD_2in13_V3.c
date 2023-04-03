@@ -29,7 +29,7 @@
 #
 ******************************************************************************/
 #include "EPD.h"
-#include "Debug.h"
+#include "debug.h"
 
 UBYTE WF_PARTIAL_V3[159] =
 {
@@ -123,7 +123,7 @@ parameter:
 ******************************************************************************/
 void EPD_V3_ReadBusy(void)
 {
-    Debug("e-Paper busy\r\n");
+    debug("e-Paper busy\r\n");
 	while(1)
 	{	 //=1 BUSY
 		if(DEV_Digital_Read(EPD_BUSY_PIN)==0)
@@ -131,7 +131,7 @@ void EPD_V3_ReadBusy(void)
 		DEV_Delay_ms(10);
 	}
 	DEV_Delay_ms(10);
-    Debug("e-Paper busy release\r\n");
+    debug("e-Paper busy release\r\n");
 }
 
 /******************************************************************************

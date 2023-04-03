@@ -13,7 +13,7 @@ include(pico_extras_import.cmake)
 
 project(ggtag)
 
-set(EPD "2in13-ws" CACHE STRING "2.13inch waveshare EPD")
+set(EPD "3in52-rse" CACHE STRING "3.52inch RSE0352N01 EPD")
 
 # initialize the Pico SDK
 pico_sdk_init()
@@ -66,6 +66,7 @@ set(TARGET epd)
 add_library(${TARGET} INTERFACE)
 target_sources(${TARGET} INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/target/src/DEV_Config.c
+    ${CMAKE_CURRENT_LIST_DIR}/shared/src/debug.c
     ${CMAKE_CURRENT_LIST_DIR}/shared/src/GUI_Paint.c
     ${CMAKE_CURRENT_LIST_DIR}/shared/src/protocol.cpp
     ${CMAKE_CURRENT_LIST_DIR}/shared/src/font8.c

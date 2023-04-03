@@ -1,5 +1,5 @@
 #include "EPD.h"
-#include "Debug.h"
+#include "debug.h"
 
 static void EPD_SendCommand(UBYTE Reg)
 {
@@ -19,11 +19,11 @@ static void EPD_SendData(UBYTE Data)
 
 static void EPD_ReadBusy(void)
 {
-    Debug("e-Paper busy\r\n");
+    debug("e-Paper busy\r\n");
     while(DEV_Digital_Read(EPD_BUSY_PIN) == 0) {      //LOW: busy, HIGH: ready
         DEV_Delay_ms(10);
     }
-    Debug("e-Paper busy release\r\n");
+    debug("e-Paper busy release\r\n");
 }
 
 static void EPD_Reset()
