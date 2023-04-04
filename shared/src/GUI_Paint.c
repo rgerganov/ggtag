@@ -313,28 +313,8 @@ parameter:
 void Paint_DrawPoint(UWORD Xpoint, UWORD Ypoint, UWORD Color,
                      DOT_PIXEL Dot_Pixel, DOT_STYLE Dot_Style)
 {
-    if (Xpoint > Paint.Width || Ypoint > Paint.Height) {
-        debug("Paint_DrawPoint Input exceeds the normal display range\r\n");
-        return;
-    }
-
-    int16_t XDir_Num , YDir_Num;
-    if (Dot_Style == DOT_FILL_AROUND) {
-        for (XDir_Num = 0; XDir_Num < 2 * Dot_Pixel - 1; XDir_Num++) {
-            for (YDir_Num = 0; YDir_Num < 2 * Dot_Pixel - 1; YDir_Num++) {
-                if(Xpoint + XDir_Num - Dot_Pixel < 0 || Ypoint + YDir_Num - Dot_Pixel < 0)
-                    break;
-                // printf("x = %d, y = %d\r\n", Xpoint + XDir_Num - Dot_Pixel, Ypoint + YDir_Num - Dot_Pixel);
-                Paint_SetPixel(Xpoint + XDir_Num - Dot_Pixel, Ypoint + YDir_Num - Dot_Pixel, Color);
-            }
-        }
-    } else {
-        for (XDir_Num = 0; XDir_Num <  Dot_Pixel; XDir_Num++) {
-            for (YDir_Num = 0; YDir_Num <  Dot_Pixel; YDir_Num++) {
-                Paint_SetPixel(Xpoint + XDir_Num - 1, Ypoint + YDir_Num - 1, Color);
-            }
-        }
-    }
+    // ignore dot_pixel and dot_style
+    Paint_SetPixel(Xpoint, Ypoint, Color);
 }
 
 /******************************************************************************
@@ -351,9 +331,8 @@ parameter:
 void Paint_DrawLine(UWORD Xstart, UWORD Ystart, UWORD Xend, UWORD Yend,
                     UWORD Color, DOT_PIXEL Line_width, LINE_STYLE Line_Style)
 {
-    if (Xstart > Paint.Width || Ystart > Paint.Height ||
-        Xend > Paint.Width || Yend > Paint.Height) {
-        debug("Paint_DrawLine Input exceeds the normal display range\r\n");
+    if (Xstart >= Paint.Width || Ystart >= Paint.Height) {
+        debug("Paint_DrawLine Input exceeds the normal display range\n");
         return;
     }
 
@@ -409,8 +388,7 @@ parameter:
 void Paint_DrawRectangle(UWORD Xstart, UWORD Ystart, UWORD Xend, UWORD Yend,
                          UWORD Color, DOT_PIXEL Line_width, DRAW_FILL Draw_Fill)
 {
-    if (Xstart > Paint.Width || Ystart > Paint.Height ||
-        Xend > Paint.Width || Yend > Paint.Height) {
+    if (Xstart >= Paint.Width || Ystart >= Paint.Height) {
         debug("Input exceeds the normal display range\r\n");
         return;
     }
@@ -423,8 +401,8 @@ void Paint_DrawRectangle(UWORD Xstart, UWORD Ystart, UWORD Xend, UWORD Yend,
     } else {
         Paint_DrawLine(Xstart, Ystart, Xend, Ystart, Color, Line_width, LINE_STYLE_SOLID);
         Paint_DrawLine(Xstart, Ystart, Xstart, Yend, Color, Line_width, LINE_STYLE_SOLID);
-        Paint_DrawLine(Xend, Yend, Xend, Ystart, Color, Line_width, LINE_STYLE_SOLID);
-        Paint_DrawLine(Xend, Yend, Xstart, Yend, Color, Line_width, LINE_STYLE_SOLID);
+        Paint_DrawLine(Xstart, Yend, Xend, Yend, Color, Line_width, LINE_STYLE_SOLID);
+        Paint_DrawLine(Xend, Ystart, Xend, Yend, Color, Line_width, LINE_STYLE_SOLID);
     }
 }
 
@@ -442,7 +420,7 @@ parameter:
 void Paint_DrawCircle(UWORD X_Center, UWORD Y_Center, UWORD Radius,
                       UWORD Color, DOT_PIXEL Line_width, DRAW_FILL Draw_Fill)
 {
-    if (X_Center > Paint.Width || Y_Center >= Paint.Height) {
+    if (X_Center >= Paint.Width || Y_Center >= Paint.Height) {
         debug("Paint_DrawCircle Input exceeds the normal display range\r\n");
         return;
     }
@@ -513,7 +491,7 @@ void Paint_DrawChar(UWORD Xpoint, UWORD Ypoint, const char Acsii_Char,
 {
     UWORD Page, Column;
 
-    if (Xpoint > Paint.Width || Ypoint > Paint.Height) {
+    if (Xpoint >= Paint.Width || Ypoint >= Paint.Height) {
         debug("Paint_DrawChar Input exceeds the normal display range\r\n");
         return;
     }
@@ -563,7 +541,7 @@ void Paint_DrawString_EN(UWORD Xstart, UWORD Ystart, const char * pString,
     UWORD Xpoint = Xstart;
     UWORD Ypoint = Ystart;
 
-    if (Xstart > Paint.Width || Ystart > Paint.Height) {
+    if (Xstart >= Paint.Width || Ystart >= Paint.Height) {
         debug("Paint_DrawString_EN Input exceeds the normal display range\r\n");
         return;
     }

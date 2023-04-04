@@ -10,10 +10,10 @@ class GGTag(object):
         self._text_cmd = ""
 
     def _check_xy(self, x, y):
-        if x < 0 or x > self._width:
-            raise ValueError("x must be in range [0, {}]".format(self._width))
-        if y < 0 or y > self._height:
-            raise ValueError("y must be in range [0, {}]".format(self._height))
+        if x < 0 or x >= self._width:
+            raise ValueError("x must be in range [0, {})".format(self._width))
+        if y < 0 or y >= self._height:
+            raise ValueError("y must be in range [0, {})".format(self._height))
 
     def text(self, x, y, font_size, text):
         self._check_xy(x, y)
