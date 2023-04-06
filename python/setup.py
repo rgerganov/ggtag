@@ -1,11 +1,11 @@
-from distutils.core import setup, Extension
+from setuptools import setup, Extension
 
 def main():
     with open("README.md", "r") as fh:
         long_description = fh.read()
 
     setup(name="ggtag",
-          version="0.1.0",
+          version="0.1.1",
           description="Python bindings for ggtag",
           long_description=long_description,
           long_description_content_type="text/markdown",
