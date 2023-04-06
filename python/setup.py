@@ -1,15 +1,19 @@
 from distutils.core import setup, Extension
 
 def main():
+    with open("README.md", "r") as fh:
+        long_description = fh.read()
+
     setup(name="ggtag",
-          version="0.0.5",
+          version="0.1.0",
           description="Python bindings for ggtag",
-          long_description="Python bindings for ggtag",
+          long_description=long_description,
+          long_description_content_type="text/markdown",
           author="Radoslav Gerganov",
           author_email="rgerganov@gmail.com",
           include_dirs = ['host/include', 'shared/include'],
           py_modules = ['ggtag'],
-          url="https://ggtag.io",
+          url="https://github.com/rgerganov/ggtag",
           ext_modules=[Extension("cggtag", [
                 "cggtag.c",
                 "host/src/ggtag.cpp",
