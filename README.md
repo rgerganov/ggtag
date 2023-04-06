@@ -12,6 +12,10 @@ The firmware is open source and licensed under the GPLv3 license. The PCB is des
 
 TBD
 
+# Known issues
+
+TBD
+
 # Credits
 
 * [ggwave](https://github.com/ggerganov/ggwave) (MIT license)
@@ -20,10 +24,19 @@ TBD
 * [QR-Code-generator](https://github.com/nayuki/QR-Code-generator) (MIT license)
 * [Serial API Polyfill](https://github.com/google/web-serial-polyfill) (Apache 2.0 license)
 * [avrfid](https://github.com/scanlime/navi-misc/blob/master/avrfid/avrfid.S) (BSD license)
+* [stb_truetype](https://github.com/nothings/stb/blob/master/stb_truetype.h) (MIT license)
 
-# Building
+# Project structure
 
-## Firmware
+The codebase is structured in the following way:
+ * `target` - contains the firmware source code for RP2040
+ * `shared` - contains the shared code between the firmware and the host library
+ * `host` - contains the host library
+ * `docs` - contains the web interface
+ * `python` - contains Python bindings for the host library
+ * `examples` - contains some examples
+
+## Building the firmware
 
 Follow these steps to build the RP2040 firmware:
 
@@ -52,18 +65,17 @@ cmake .. -DPICO_BOARD=pico
 make
 ```
 
-## Web interface
+## Building the web interface
 
-[Emscripten](https://emscripten.org/) is used for building the web interface:
-
+The host library is compiled to WASM using [Emscripten](https://emscripten.org/):
 ```
 source <path_to_emsdk_env.sh>
 CXX=emcc make
 ```
-
-Live version of the web interface is available at [https://ggtag.io](https://ggtag.io)
+You can start a local server with `make server` and access the web interface at [http://localhost:8000](http://localhost:8000).
+There is a hosted version available at [https://ggtag.io](https://ggtag.io)
 
 ## Flashing the firmware
 
-Press and hold the BOOTSEL button while putting the battery. Copy `build/ggtag.uf2` to the `RPI-RP2` drive. The tag will reboot and run the new firmware.
-
+Put ggtag into USB mode, press and hold the button and plug the USB cable.
+Copy `build/ggtag-3in52-rse.uf2` to the `RPI-RP2` drive. The tag will reboot and run the new firmware.
