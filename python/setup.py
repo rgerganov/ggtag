@@ -28,6 +28,7 @@ def main():
                 "shared/src/font20.c",
                 "shared/src/font24.c",
                 "shared/src/qrcodegen.c",
+                "shared/src/debug.c",
                 ])])
 
 if __name__ == "__main__":
