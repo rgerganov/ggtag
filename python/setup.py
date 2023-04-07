@@ -5,7 +5,7 @@ def main():
         long_description = fh.read()
 
     setup(name="ggtag",
-          version="0.1.1",
+          version="0.1.2",
           description="Python bindings for ggtag",
           long_description=long_description,
           long_description_content_type="text/markdown",
