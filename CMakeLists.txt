@@ -122,7 +122,7 @@ target_link_libraries(${TARGET} PUBLIC pico_pdm_microphone ggwave epd hardware_s
 # 2 - GPIO deep-sleep
 set(GGTAG_DEEP_SLEEP 2)
 
-target_compile_definitions(${TARGET} PUBLIC -DGGTAG_DEEP_SLEEP=${GGTAG_DEEP_SLEEP})
+target_compile_definitions(${TARGET} PUBLIC -DGGTAG_DEEP_SLEEP=${GGTAG_DEEP_SLEEP} -DPICO_XOSC_STARTUP_DELAY_MULTIPLIER=64)
 
 # link both usb and uart and choose one of them in runtime:
 #   if running from USB then use usb output
