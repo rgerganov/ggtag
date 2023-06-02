@@ -107,7 +107,7 @@ target_include_directories(${TARGET} INTERFACE
 # ggtag
 #
 
-set(TARGET "ggtag-${EPD}")
+set(TARGET "ggtag")
 
 add_executable(${TARGET}
     ${CMAKE_CURRENT_LIST_DIR}/target/src/main.cpp
@@ -132,6 +132,8 @@ pico_enable_stdio_uart(${TARGET} 1)
 
 # create map/bin/hex/uf2 file in addition to ELF.
 pico_add_extra_outputs(${TARGET})
+# set url shown by picotool
+pico_set_program_url(${TARGET} "https://ggtag.io")
 
 #
 # sleep_test0
