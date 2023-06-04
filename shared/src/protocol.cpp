@@ -103,6 +103,12 @@ void renderBits(const uint8_t *input, int bits_count)
                     font = &Font20;
                 } else if (fontNum == 4) {
                     font = &Font24;
+                } else if (fontNum == 5) {
+                    font = &Font28;
+                } else if (fontNum == 6) {
+                    font = &Font32;
+                } else if (fontNum == 7) {
+                    font = &Font36;
                 }
                 Paint_DrawString_EN(x, y, text, font, WHITE, BLACK);
                 free(text);

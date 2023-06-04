@@ -77,14 +77,14 @@ typedef struct
 
 }cFONT;
 
+extern sFONT Font36;
+extern sFONT Font32;
+extern sFONT Font28;
 extern sFONT Font24;
 extern sFONT Font20;
 extern sFONT Font16;
 extern sFONT Font12;
 extern sFONT Font8;
-
-extern cFONT Font12CN;
-extern cFONT Font24CN;
 
 extern const uint8_t fa_solid_900_ttf[];
 extern unsigned int fa_solid_900_ttf_len;
