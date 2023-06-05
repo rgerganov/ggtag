@@ -164,7 +164,8 @@ function onCmdChange() {
         } else if (newCmd == "QR code") {
             remaining = randomInt(1, 4) + "," + randomWord();
         } else if (newCmd == "Image") {
-            remaining = "0,0,https://ggtag.io/mario.png";
+            let dither = randomInt(0, 1);
+            remaining = "0,0," + dither + ",https://ggtag.io/mario.png";
         } else if (newCmd == "Icon") {
             remaining = randomInt(16,40) + "," + randomIcon();
         } else if (newCmd == "RFID") {
@@ -490,20 +491,21 @@ const loadImage = (url) => new Promise((resolve, reject) => {
 async function preprocessImages(input)
 {
     const canvas = document.getElementById("ggCanvas");
-    // find all image escape sequences "\I<x>,<y>,<w>,<h><url>"
-    let regex = /\\I(\d+),(\d+),(\d+),(\d+),([^\\]+)/g;
+    // find all image escape sequences "\I<x>,<y>,<w>,<h>,<dither>,<url>"
+    let regex = /\\I(\d+),(\d+),(\d+),(\d+),(\d),([^\\]+)/g;
     let match = null;
     while ((match = regex.exec(input)) !== null) {
         try {
-            var img = await loadImage(match[5]);
+            var img = await loadImage(match[6]);
         } catch (e) {
-            console.log("Failed to load image: " + match[5]);
+            console.log("Failed to load image: " + match[6]);
             continue;
         }
         let x = match[1];
         let y = match[2];
         let w = match[3];
         let h = match[4];
+        let dither = match[5];
         if (w == 0) {
             w = img.width;
         }
@@ -517,14 +519,14 @@ async function preprocessImages(input)
         let rgbaArr = imgData.data;
         let rgbaBuf = Module._malloc(rgbaArr.length*rgbaArr.BYTES_PER_ELEMENT);
         if (rgbaBuf == 0) {
-            console.log("Failed to allocate memory for image: " + match[5]);
+            console.log("Failed to allocate memory for image: " + match[6]);
             continue;
         }
         Module.HEAPU8.set(rgbaArr, rgbaBuf);
-        // get dithered bitmap from RGBA image
-        let ditheredPtr = Module.ccall('dither', 'number', ['number', 'number', 'number'], [rgbaBuf, imgData.width, imgData.height]);
+        // get monochrome bitmap from RGBA image
+        let ditheredPtr = Module.ccall('monoimage', 'number', ['number', 'number', 'number','number'], [rgbaBuf, imgData.width, imgData.height, dither]);
         if (ditheredPtr == 0) {
-            console.log("Failed to dither image: " + match[5]);
+            console.log("monoimage failed: " + match[6]);
             Module._free(rgbaBuf);
             continue;
         }

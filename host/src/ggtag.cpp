@@ -871,7 +871,7 @@ char* getLastError()
     return lastError;
 }
 
-// Allocates a bitmap with dimensions [ceil(width/8), height] and renders the specified input string to it.
+// Allocates a bitmap with dimensions [ceil(width/8), height] and renders the tag produced by the specified input string.
 // Caller is responsible for freeing the bitmap.
 uint8_t* render(const char *input, int width, int height)
 {
@@ -904,9 +904,11 @@ uint8_t* render(const char *input, int width, int height)
     return bitmap;
 }
 
-// Allocates a bitmap with size ceil(width * height / 8) and performs dithering of the specified input image.
+// Converts the specified RGBA image to a monochrome bitmap.
+// Allocates a bitmap with size ceil(width * height / 8) and renders the image into it.
+// If dither is true, the image is dithered using the Floyd-Steinberg algorithm.
 // Caller is responsible for freeing the bitmap.
-uint8_t* dither(const uint8_t *rgba, int width, int height)
+uint8_t* monoimage(const uint8_t *rgba, int width, int height, bool dither)
 {
     if (!rgba || width <= 0 || height <= 0) {
         return 0;
@@ -918,23 +920,25 @@ uint8_t* dither(const uint8_t *rgba, int width, int height)
     for (int i = 0; i < width * height; i++) {
         gray[i] = 0.2126 * rgba[i*4] + 0.7152 * rgba[i*4+1] + 0.0722 * rgba[i*4+2];
     }
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-            float oldpixel = gray[y * width + x];
-            float newpixel = (oldpixel > 127) ? 255 : 0;
-            gray[y * width + x] = newpixel;
-            float quant_error = oldpixel - newpixel;
-            if (x < width - 1) {
-                gray[y * width + x + 1] += quant_error * 7.0 / 16.0;
-            }
-            if (x > 0 && y < height - 1) {
-                gray[(y + 1) * width + x - 1] += quant_error * 3.0 / 16.0;
-            }
-            if (y < height - 1) {
-                gray[(y + 1) * width + x] += quant_error * 5.0 / 16.0;
-            }
-            if (x < width - 1 && y < height - 1) {
-                gray[(y + 1) * width + x + 1] += quant_error * 1.0 / 16.0;
+    if (dither) {
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                float oldpixel = gray[y * width + x];
+                float newpixel = (oldpixel > 127) ? 255 : 0;
+                gray[y * width + x] = newpixel;
+                float quant_error = oldpixel - newpixel;
+                if (x < width - 1) {
+                    gray[y * width + x + 1] += quant_error * 7.0 / 16.0;
+                }
+                if (x > 0 && y < height - 1) {
+                    gray[(y + 1) * width + x - 1] += quant_error * 3.0 / 16.0;
+                }
+                if (y < height - 1) {
+                    gray[(y + 1) * width + x] += quant_error * 5.0 / 16.0;
+                }
+                if (x < width - 1 && y < height - 1) {
+                    gray[(y + 1) * width + x + 1] += quant_error * 1.0 / 16.0;
+                }
             }
         }
     }
