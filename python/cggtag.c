@@ -41,15 +41,15 @@ static PyObject *method_render(PyObject *self, PyObject *args) {
     return result;
 }
 
-static PyObject *method_dither(PyObject *self, PyObject *args) {
+static PyObject *method_monoimage(PyObject *self, PyObject *args) {
     const uint8_t *rgba;
     Py_ssize_t rgba_size;
-    int width, height;
+    int width, height, dither;
 
-    if (!PyArg_ParseTuple(args, "y#ii", &rgba, &rgba_size, &width, &height)) {
+    if (!PyArg_ParseTuple(args, "y#iip", &rgba, &rgba_size, &width, &height, &dither)) {
         return NULL;
     }
-    uint8_t *bitmap = dither(rgba, width, height);
+    uint8_t *bitmap = monoimage(rgba, width, height, dither);
     Py_ssize_t buff_size = width * height;
     if (buff_size % 8 == 0) {
         buff_size = buff_size / 8;
@@ -65,7 +65,7 @@ static PyMethodDef EncodeMethods[] = {
     {"encode", method_encode, METH_VARARGS, "Encode text commands to ggtag's binary format"},
     {"last_error", method_lasterror, METH_VARARGS, "Returns the last error from the parser"},
     {"render", method_render, METH_VARARGS, "Render text commands to bitmap"},
-    {"dither", method_dither, METH_VARARGS, "Dither the specified RGBA image"},
+    {"monoimage", method_monoimage, METH_VARARGS, "Convert the specified RGBA image to monochrome bitmap"},
     {NULL, NULL, 0, NULL}
 };
 

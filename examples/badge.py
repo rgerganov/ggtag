@@ -41,7 +41,7 @@ if __name__ == '__main__':
     tag = ggtag.GGTag()
     tag.rect(10, 25, 110, 110)
     if not args.qrcode:
-        tag.image_url(15, 30, 100, 100, profile_pic)
+        tag.image_url(15, 30, 100, 100, True, profile_pic)
     else:
         if len(username) > 7:
             tag.qrcode(20, 35, 3, 'https://github.com/{}'.format(username))

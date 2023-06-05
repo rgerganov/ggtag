@@ -7,6 +7,7 @@ import argparse
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Creates tag with PNG image')
+    parser.add_argument('-d', '--dither', help='Use dithering', action='store_true')
     parser.add_argument('img', type=str, help='URL or file name of the image', nargs='?', default='https://ggtag.io/mario.png')
     args = parser.parse_args()
     if args.img.startswith('http://') or args.img.startswith('https://'):
@@ -23,7 +24,7 @@ if __name__ == "__main__":
     for row in rows:
         rgba += bytes(row)
     tag = ggtag.GGTag()
-    tag.image(10, 10, width, height, rgba)
+    tag.image(10, 10, width, height, rgba, args.dither)
     tag.browse()
     print("Saving tag to ggtag.png")
     bitmap = tag.render()

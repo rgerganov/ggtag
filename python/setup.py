@@ -5,7 +5,7 @@ def main():
         long_description = fh.read()
 
     setup(name="ggtag",
-          version="0.1.2",
+          version="1.1.0",
           description="Python bindings for ggtag",
           long_description=long_description,
           long_description_content_type="text/markdown",
@@ -27,6 +27,9 @@ def main():
                 "shared/src/font16.c",
                 "shared/src/font20.c",
                 "shared/src/font24.c",
+                "shared/src/font28.c",
+                "shared/src/font32.c",
+                "shared/src/font36.c",
                 "shared/src/qrcodegen.c",
                 "shared/src/debug.c",
                 ])])

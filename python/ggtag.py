@@ -46,20 +46,20 @@ class GGTag(object):
         self._check_xy(x, y)
         self._text_cmd += "\\q{},{},{},{}".format(x, y, size, text)
 
-    def image(self, x, y, width, height, rgba_image):
+    def image(self, x, y, width, height, rgba_image, dither=False):
         """Draw image at position (x, y) with the given width and height.
         The image is given as a byte array of RGBA values in row-major order.
         """
         self._check_xy(x, y)
-        bitmap = cggtag.dither(rgba_image, width, height)
+        bitmap = cggtag.monoimage(rgba_image, width, height, dither)
         image = base64.b64encode(bitmap).decode("utf-8")
         self._text_cmd += "\\i{},{},{},{},{}".format(x, y, width, height, image)
 
-    def image_url(self, x, y, width, height, url):
+    def image_url(self, x, y, width, height, dither, url):
         """Place the image from the given URL at position (x, y) with the given
         width and height."""
         self._check_xy(x, y)
-        self._text_cmd += "\\I{},{},{},{},{}".format(x, y, width, height, url)
+        self._text_cmd += "\\I{},{},{},{},{},{}".format(x, y, width, height, int(dither), url)
 
     def icon(self, x, y, height, icon_name):
         """Place the icon with the given name at position (x, y) with the given
