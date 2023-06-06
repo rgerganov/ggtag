@@ -11,9 +11,9 @@ int main()
 {
     stdio_init_all();
     // wait for USB CDC connect
-    while (!stdio_usb_connected()) {
-        tight_loop_contents();
-    }
+    // while (!stdio_usb_connected()) {
+    //     tight_loop_contents();
+    // }
 #if defined(EPD_2IN13)
     printf("Using 2.13inch display\n");
 #elif defined(EPD_3IN52)
@@ -26,8 +26,6 @@ int main()
         printf("EPD module init failed\n");
         while (1) { tight_loop_contents(); }
     }
-    printf("e-Paper Init and Clear...\n");
-    EPD_Init();
     //Create a new image cache
     UWORD imgSize = ((EPD_WIDTH % 8 == 0)? (EPD_WIDTH / 8 ): (EPD_WIDTH / 8 + 1)) * EPD_HEIGHT;
     UBYTE *img = NULL;
@@ -35,14 +33,21 @@ int main()
         printf("Failed to allocate memory\n");
         while (1) { tight_loop_contents(); }
     }
-    Paint_NewImage(img, EPD_WIDTH, EPD_HEIGHT, 90, WHITE);
-    Paint_Clear(WHITE);
-    Paint_DrawRectangle(5, 5, EPD_HEIGHT-5, EPD_WIDTH-5, BLACK, DOT_PIXEL_1X1, DRAW_FILL_EMPTY);
-    Paint_DrawString_EN(EPD_HEIGHT/2, EPD_WIDTH/2, "Hello World", &Font16, WHITE, BLACK);
-    EPD_Display(img, NULL);
-    printf("Sleeping...\n");
-    EPD_Sleep();
-    printf("Done\n");
+    printf("e-Paper Init and Clear...\n");
+    char msg[256];
+    for (int i = 0 ; ; i++) {
+        EPD_Init();
+        Paint_NewImage(img, EPD_WIDTH, EPD_HEIGHT, 90, WHITE);
+        Paint_Clear(WHITE);
+        Paint_DrawRectangle(5, 5, EPD_HEIGHT-5, EPD_WIDTH-5, BLACK, DOT_PIXEL_1X1, DRAW_FILL_EMPTY);
+        sprintf(msg, "Hello World %d", i);
+        Paint_DrawString_EN(EPD_HEIGHT/2 + (i%20), EPD_WIDTH/2 + (i%20), msg, &Font16, WHITE, BLACK);
+        EPD_Display(img, NULL);
+        printf("Sleeping...\n");
+        EPD_Sleep();
+        printf("Done\n");
+        sleep_ms(3000);
+    }
     while (1) { tight_loop_contents(); }
     return 0;
 }

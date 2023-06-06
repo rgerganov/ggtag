@@ -167,6 +167,7 @@ add_executable(${TARGET}
 )
 
 target_link_libraries(${TARGET} PUBLIC pico_stdlib epd hardware_spi)
+target_compile_definitions(${TARGET} PUBLIC -DPICO_XOSC_STARTUP_DELAY_MULTIPLIER=64)
 
 # enable usb output, disable uart output
 pico_enable_stdio_usb (${TARGET} 1)

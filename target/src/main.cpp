@@ -473,8 +473,7 @@ void run_from_usb()
         renderBits(data, length*8);
         free(data);
         EPD_Display(img, NULL);
-        // TODO: putting display to sleep is causing problems
-        // EPD_Sleep();
+        EPD_Sleep();
         printf("Done.\n");
         stdio_flush();
     }

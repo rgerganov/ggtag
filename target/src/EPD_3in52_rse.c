@@ -26,12 +26,10 @@ static void EPD_ReadBusy(void)
 
 static void EPD_Reset()
 {
-    for (int i = 0; i < 3; i++) {
-        DEV_Digital_Write(EPD_RST_PIN, 0);
-        DEV_Delay_ms(20);
-        DEV_Digital_Write(EPD_RST_PIN, 1);
-        DEV_Delay_ms(20);
-    }
+    DEV_Digital_Write(EPD_RST_PIN, 0);
+    DEV_Delay_ms(20);
+    DEV_Digital_Write(EPD_RST_PIN, 1);
+    DEV_Delay_ms(20);
 }
 
 static void EPD_Refresh()
@@ -46,37 +44,40 @@ void EPD_Init()
     EPD_Reset();
     DEV_Delay_ms(100);
 
-    // EPD_SendCommand(0x01);     // POWER SETTING   PWR
-    // EPD_SendData(0x03);      //  x x x x x x VDS_EN VDG_EN
-    // EPD_SendData(0x10);      //  x x x VCOM_SLWE VGH[3:0]   VGH=20V, VGL=-20V
-    // EPD_SendData(0x3F);      //  x x VSH[5:0]  VSH = 15V
-    // EPD_SendData(0x3F);      //  x x VSL[5:0]  VSL=-15V
-    // EPD_SendData(0x14);      //  OPTEN VDHR[6:0]  VHDR=6.4V
-
-    // EPD_SendCommand(0x03);     // POWER OFF sequence setting    PFS
-    // EPD_SendData(0x00);      // x x T_VDS_OFF[1:0] x x x x                 // T_VDS_OFF[1:0] 00=1 frame; 01=2 frame; 10=3 frame; 11=4 fram
-
-    // EPD_SendCommand(0x06);     // booster soft start   BTST
-    // EPD_SendData(0x17);      //  BT_PHA[7:0]
-    // EPD_SendData(0x17);      //  BT_PHB[7:0]
-    // EPD_SendData(0x17);      //  x x BT_PHC[5:0]
-
-    EPD_SendCommand(0x04); //power on
-    DEV_Delay_ms(10);
-    EPD_ReadBusy();
-
     EPD_SendCommand(0x00); // panel setting register
     EPD_SendData(0x1F);
     EPD_SendData(0x0D);
     DEV_Delay_ms(10);
 
-    EPD_SendCommand(0x61); // RESOLUTION_SETTING
+    EPD_SendCommand(0x01);      // POWER SETTING   PWR
+    EPD_SendData(0x03);         //  x x x x x x VDS_EN VDG_EN
+    EPD_SendData(0x10);         //  x x x VCOM_SLWE VGH[3:0]   VGH=20V, VGL=-20V
+    EPD_SendData(0x3F);         //  x x VSH[5:0]	VSH = 15V
+    EPD_SendData(0x3F);         //  x x VSL[5:0]	VSL=-15V
+    EPD_SendData(0x03);         //  OPTEN VDHR[6:0]  VHDR=6.4V
+                                // T_VDS_OFF[1:0] 00=1 frame; 01=2 frame; 10=3 frame; 11=4 frame
+    EPD_SendCommand(0x06);      // booster soft start   BTST
+    EPD_SendData(0b00010111);         //  BT_PHA[7:0]
+    EPD_SendData(0b00010111);         //  BT_PHB[7:0]
+    EPD_SendData(0b00010111);         //  x x BT_PHC[5:0]
+
+    EPD_SendCommand(0x82);      // VCOM_DC setting		VDCS
+    EPD_SendData(0x07);         // x  VDCS[6:0]	VCOM_DC value= -1.9v    00~3f,0x12=-1.9v
+
+    EPD_SendCommand(0x30);
+    EPD_SendData(0x09);
+
+    EPD_SendCommand(0x04);      //power on
+    DEV_Delay_ms(10);
+    EPD_ReadBusy();
+
+    EPD_SendCommand(0x61);      // RESOLUTION_SETTING
     EPD_SendData(EPD_WIDTH);
     EPD_SendData(EPD_HEIGHT >> 8);
     EPD_SendData(EPD_HEIGHT & 0xFF);
 
-    // EPD_SendCommand(0x50);
-    // EPD_SendData(0x97);
+    EPD_SendCommand(0x50);
+    EPD_SendData(0xD7);
 }
 
 void EPD_Clear()
