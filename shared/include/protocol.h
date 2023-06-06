@@ -2,6 +2,38 @@
 #define _PROTOCOL_H_
 #include <stdint.h>
 
+struct BitReader {
+    const uint8_t *buffer;
+    int bits_count;
+    int ind;
+
+    BitReader(const uint8_t *buffer, int bits_count)
+        : buffer(buffer), bits_count(bits_count), ind(0)
+    {
+    }
+
+    uint32_t read(int num_bits)
+    {
+        if (num_bits > 32) {
+            return -1;
+        }
+        if (ind + num_bits > bits_count) {
+            return -1;
+        }
+        uint32_t result = 0;
+        for (int i = 0; i < num_bits; i++) {
+            result <<= 1;
+            if (buffer[ind / 8] & (1 << (7 - (ind % 8)))) {
+                result |= 1;
+            }
+            ind++;
+        }
+        return result;
+    }
+};
+
+// run length encoding bits
+#define RLE_BITS        2
 // draw text command
 #define TEXT_CMD        0
 // draw rectangle command
@@ -22,8 +54,10 @@
 #define ICON_CMD        8
 // program rfid
 #define RFID_CMD        9
+// draw image (run length encoded)
+#define RLE_IMAGE_CMD   10
 
-#define EOF_CMD         10
+#define EOF_CMD         11
 
 // bits for command
 #define CMD_BITS       4

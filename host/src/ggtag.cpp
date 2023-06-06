@@ -66,6 +66,8 @@ struct RFIDCmd {
     int id2;
 };
 
+static uint8_t* rl_encode(const uint8_t *bitmap, int bitmap_size, int *rle_length);
+
 struct BitBuffer {
     uint8_t *buffer;
     int capacity; // capacity in bytes
@@ -89,10 +91,9 @@ struct BitBuffer {
         }
         return ret;
     }
-
-    bool addBits(uint32_t value, int num_bits)
+    bool ensureCapacity(int num_bits)
     {
-        if (!buffer || num_bits > 32) {
+        if (!buffer) {
             return false;
         }
         if (ind + num_bits > capacity * 8) {
@@ -102,6 +103,32 @@ struct BitBuffer {
             }
             memset(buffer + capacity, 0, capacity);
             capacity *= 2;
+        }
+        return true;
+    }
+    bool addBits(int8_t bit, int num_bits)
+    {
+        if (bit != 0 && bit != 1) {
+            return false;
+        }
+        if (!ensureCapacity(num_bits)) {
+            return false;
+        }
+        for (int i = 0; i < num_bits; i++) {
+            if (bit) {
+                buffer[ind / 8] |= (1 << (7 - (ind % 8)));
+            }
+            ind++;
+        }
+        return true;
+    }
+    bool addValue(uint32_t value, int num_bits)
+    {
+        if (num_bits > 32) {
+            return false;
+        }
+        if (!ensureCapacity(num_bits)) {
+            return false;
         }
         for (int i = 0; i < num_bits; i++) {
             if (value & (1 << (num_bits - i - 1))) {
@@ -113,25 +140,25 @@ struct BitBuffer {
     }
     bool addCmd(const TextCmd &cmd)
     {
-        if (!addBits(TEXT_CMD, CMD_BITS)) {
+        if (!addValue(TEXT_CMD, CMD_BITS)) {
             return false;
         }
-        if (!addBits(cmd.x, X_BITS)) {
+        if (!addValue(cmd.x, X_BITS)) {
             return false;
         }
-        if (!addBits(cmd.y, Y_BITS)) {
+        if (!addValue(cmd.y, Y_BITS)) {
             return false;
         }
         // font numbers are zero-based
-        if (!addBits(cmd.font-1, FONT_BITS)) {
+        if (!addValue(cmd.font-1, FONT_BITS)) {
             return false;
         }
-        if (!addBits(cmd.text_len, LENGTH_BITS)) {
+        if (!addValue(cmd.text_len, LENGTH_BITS)) {
             return false;
         }
         const char *ptr = cmd.text;
         for (int i = 0; i < cmd.text_len; i++) {
-            if (!addBits(*ptr, CHAR_BITS)) {
+            if (!addValue(*ptr, CHAR_BITS)) {
                 return false;
             }
             if (*ptr == '\\') {
@@ -143,99 +170,117 @@ struct BitBuffer {
     }
     bool addCmd(const ImageCmd &cmd)
     {
-        if (!addBits(IMAGE_CMD, CMD_BITS)) {
-            return false;
-        }
-        if (!addBits(cmd.x, X_BITS)) {
-            return false;
-        }
-        if (!addBits(cmd.y, Y_BITS)) {
-            return false;
-        }
-        if (!addBits(cmd.width, X_BITS)) {
-            return false;
-        }
-        if (!addBits(cmd.height, Y_BITS)) {
-            return false;
-        }
-        int decoded_size = cmd.b64_data_len/4*3;
-        uint8_t *decoded = (uint8_t*) malloc(decoded_size);
-        if (!decoded) {
-            return false;
-        }
-        b64_decode((const uint8_t*)cmd.b64_data, cmd.b64_data_len, decoded);
         int img_size = cmd.width * cmd.height;
+        const uint8_t *img = 0;
+        int decoded_size = cmd.b64_data_len/4*3;
+        uint8_t *bmp = (uint8_t*) malloc(decoded_size);
+        if (!bmp) {
+            return false;
+        }
+        b64_decode((const uint8_t*)cmd.b64_data, cmd.b64_data_len, bmp);
+        int rle_size = 0;
+        uint8_t *rle_image = rl_encode(bmp, img_size, &rle_size);
+        if (rle_image && rle_size < img_size) {
+            img = rle_image;
+            img_size = rle_size;
+            // run-length encoded bitmap
+            if (!addValue(RLE_IMAGE_CMD, CMD_BITS)) {
+                return false;
+            }
+        } else {
+            img = bmp;
+            // normal bitmap
+            if (!addValue(IMAGE_CMD, CMD_BITS)) {
+                return false;
+            }
+        }
+        if (!addValue(cmd.x, X_BITS)) {
+            return false;
+        }
+        if (!addValue(cmd.y, Y_BITS)) {
+            return false;
+        }
+        if (!addValue(cmd.width, X_BITS)) {
+            return false;
+        }
+        if (!addValue(cmd.height, Y_BITS)) {
+            return false;
+        }
         for (int i = 0; i < img_size/8; i++) {
-            if (!addBits(decoded[i], 8)) {
-                free(decoded);
+            if (!addValue(img[i], 8)) {
+                free(bmp);
+                free(rle_image);
                 return false;
             }
         }
         if (img_size % 8 != 0) {
-            if (!addBits(decoded[img_size/8], img_size % 8)) {
-                free(decoded);
+            int rem_bits = img_size % 8;
+            if (!addValue(img[img_size/8] >> (8-rem_bits), rem_bits)) {
+                free(bmp);
+                free(rle_image);
                 return false;
             }
         }
-        free(decoded);
+        free(bmp);
+        free(rle_image);
         return true;
     }
     bool addCmd(const IconCmd &cmd)
     {
-        if (!addBits(ICON_CMD, CMD_BITS)) {
+        if (!addValue(ICON_CMD, CMD_BITS)) {
             return false;
         }
-        if (!addBits(cmd.x, X_BITS)) {
+        if (!addValue(cmd.x, X_BITS)) {
             return false;
         }
-        if (!addBits(cmd.y, Y_BITS)) {
+        if (!addValue(cmd.y, Y_BITS)) {
             return false;
         }
-        if (!addBits(cmd.height, Y_BITS)) {
+        if (!addValue(cmd.height, Y_BITS)) {
             return false;
         }
-        if (!addBits(cmd.codepoint, ICON_BITS)) {
+        if (!addValue(cmd.codepoint, ICON_BITS)) {
             return false;
         }
         return true;
     }
     bool addCmd(const RFIDCmd &cmd)
     {
-        if (!addBits(RFID_CMD, CMD_BITS)) {
+        if (!addValue(RFID_CMD, CMD_BITS)) {
             return false;
         }
-        if (!addBits(cmd.is_hid, 1)) {
+        if (!addValue(cmd.is_hid, 1)) {
             return false;
         }
-        if (!addBits(cmd.id1, RFID1_BITS)) {
+        if (!addValue(cmd.id1, RFID1_BITS)) {
             return false;
         }
-        if (!addBits(cmd.id2, RFID2_BITS)) {
+        if (!addValue(cmd.id2, RFID2_BITS)) {
             return false;
         }
         return true;
     }
     bool addCmd(const QRCodeCmd &cmd)
     {
-        if (!addBits(QRCODE_CMD, CMD_BITS)) {
+        if (!addValue(QRCODE_CMD, CMD_BITS)) {
             return false;
         }
-        if (!addBits(cmd.x, X_BITS)) {
+        if (!addValue(cmd.x, X_BITS)) {
             return false;
         }
-        if (!addBits(cmd.y, Y_BITS)) {
+        if (!addValue(cmd.y, Y_BITS)) {
             return false;
         }
         // pixel_width is zero-based
-        if (!addBits(cmd.pixel_width-1, QR_PIXEL_WIDTH)) {
+        if (!addValue(cmd.pixel_width-1, QR_PIXEL_WIDTH)) {
             return false;
         }
-        if (!addBits(cmd.text_len, LENGTH_BITS)) {
+        if (!addValue(cmd.text_len, LENGTH_BITS)) {
             return false;
         }
         const char *ptr = cmd.text;
         for (int i = 0; i < cmd.text_len; i++) {
-            if (!addBits(*ptr, CHAR_BITS)) {
+            if (!addValue(*ptr, CHAR_BITS)) {
                 return false;
             }
             if (*ptr == '\\') {
@@ -248,19 +293,19 @@ struct BitBuffer {
     bool addCmd(const RectCmd &cmd, bool fill)
     {
         int cmd_bits = fill ? FILL_RECT_CMD : RECT_CMD;
-        if (!addBits(cmd_bits, CMD_BITS)) {
+        if (!addValue(cmd_bits, CMD_BITS)) {
             return false;
         }
-        if (!addBits(cmd.x, X_BITS)) {
+        if (!addValue(cmd.x, X_BITS)) {
             return false;
         }
-        if (!addBits(cmd.y, Y_BITS)) {
+        if (!addValue(cmd.y, Y_BITS)) {
             return false;
         }
-        if (!addBits(cmd.width, X_BITS)) {
+        if (!addValue(cmd.width, X_BITS)) {
             return false;
         }
-        if (!addBits(cmd.height, Y_BITS)) {
+        if (!addValue(cmd.height, Y_BITS)) {
             return false;
         }
         return true;
@@ -268,35 +313,35 @@ struct BitBuffer {
     bool addCmd(const CircleCmd &cmd, bool fill)
     {
         int cmd_bits = fill ? FILL_CIRCLE_CMD : CIRCLE_CMD;
-        if (!addBits(cmd_bits, CMD_BITS)) {
+        if (!addValue(cmd_bits, CMD_BITS)) {
             return false;
         }
-        if (!addBits(cmd.x, X_BITS)) {
+        if (!addValue(cmd.x, X_BITS)) {
             return false;
         }
-        if (!addBits(cmd.y, Y_BITS)) {
+        if (!addValue(cmd.y, Y_BITS)) {
             return false;
         }
-        if (!addBits(cmd.r, R_BITS)) {
+        if (!addValue(cmd.r, R_BITS)) {
             return false;
         }
         return true;
     }
     bool addCmd(const LineCmd &cmd)
     {
-        if (!addBits(LINE_CMD, CMD_BITS)) {
+        if (!addValue(LINE_CMD, CMD_BITS)) {
             return false;
         }
-        if (!addBits(cmd.x1, X_BITS)) {
+        if (!addValue(cmd.x1, X_BITS)) {
             return false;
         }
-        if (!addBits(cmd.y1, Y_BITS)) {
+        if (!addValue(cmd.y1, Y_BITS)) {
             return false;
         }
-        if (!addBits(cmd.x2, X_BITS)) {
+        if (!addValue(cmd.x2, X_BITS)) {
             return false;
         }
-        if (!addBits(cmd.y2, Y_BITS)) {
+        if (!addValue(cmd.y2, Y_BITS)) {
             return false;
         }
         return true;
@@ -904,6 +949,48 @@ uint8_t* render(const char *input, int width, int height)
     return bitmap;
 }
 
+static void rl_number(BitBuffer *buf, int num)
+{
+    int divider = (1 << RLE_BITS) - 1;
+    if (num < divider) {
+        buf->addValue(num, RLE_BITS);
+    } else {
+        rl_number(buf, num / divider);
+        buf->addValue(num % divider, RLE_BITS);
+    }
+}
+
+static uint8_t* rl_encode(const uint8_t *bitmap, int bitmap_size, int *rle_length)
+{
+    int divider = (1 << RLE_BITS) - 1;
+    BitBuffer buf;
+    BitReader reader(bitmap, bitmap_size);
+    uint8_t curr_value = 0;
+    int count = 0;
+    for (int i = 0 ; i < bitmap_size ; i++) {
+        int val = reader.read(1);
+        if (val == curr_value) {
+            count++;
+        } else {
+            if (count > 0) {
+                rl_number(&buf, count);
+            }
+            buf.addValue(divider, RLE_BITS);
+            curr_value = val;
+            count = 1;
+        }
+    }
+    rl_number(&buf, count);
+    debug("RLE size: %d (%.02f orig size)\n", buf.ind, (float)buf.ind / (bitmap_size));
+    uint8_t *ret = (uint8_t*) calloc(buf.size(), 1);
+    if (!ret) {
+        return 0;
+    }
+    memcpy(ret, buf.buffer, buf.size());
+    *rle_length = buf.ind;
+    return ret;
+}
+
 // Converts the specified RGBA image to a monochrome bitmap.
 // Allocates a bitmap with size ceil(width * height / 8) and renders the image into it.
 // If dither is true, the image is dithered using the Floyd-Steinberg algorithm.
@@ -979,5 +1066,6 @@ int main(int argc, char *argv[])
     uint8_t data[128] = {0};
     b64_decode((const uint8_t*) b64, strlen(b64), data);
     printf("Decoded data: %s\n", data);
+    //rl_number(NULL, 9034, 4);
     return 0;
 }

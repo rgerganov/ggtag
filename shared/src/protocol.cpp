@@ -7,36 +7,6 @@
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "stb_truetype.h" /* http://nothings.org/stb/stb_truetype.h */
 
-struct BitReader {
-    const uint8_t *buffer;
-    int bits_count;
-    int ind;
-
-    BitReader(const uint8_t *buffer, int bits_count)
-        : buffer(buffer), bits_count(bits_count), ind(0)
-    {
-    }
-
-    uint32_t read(int num_bits)
-    {
-        if (num_bits > 32) {
-            return -1;
-        }
-        if (ind + num_bits > bits_count) {
-            return -1;
-        }
-        uint32_t result = 0;
-        for (int i = 0; i < num_bits; i++) {
-            result <<= 1;
-            if (buffer[ind / 8] & (1 << (7 - (ind % 8)))) {
-                result |= 1;
-            }
-            ind++;
-        }
-        return result;
-    }
-};
-
 // Renders the specified codepoint on a 1D bitmap with size ceil(out_width*out_height/8).
 // Caller is responsible for freeing the bitmap.
 static uint8_t* renderCodepoint(int codepoint, int height, int *out_width, int *out_height)
@@ -67,6 +37,36 @@ static uint8_t* renderCodepoint(int codepoint, int height, int *out_width, int *
     }
     free(bytemap);
     return bitmap;
+}
+
+static void draw_bits(int x, int y, int offset, int w, int val, int count)
+{
+    for (int i = 0; i < count; i++) {
+        int col = x + (i + offset) % w;
+        int row = y + (i + offset) / w;
+        Paint_SetPixel(col, row, val ? BLACK : WHITE);
+    }
+}
+
+static void rle_img_render(BitReader *br, int x, int y, int width, int height)
+{
+    int divider = (1 << RLE_BITS) - 1;
+    uint8_t curr_value = 0;
+    int count = 0;
+    int offset = 0;
+    int img_size = width * height;
+    while (count+offset < img_size) {
+        int val = br->read(RLE_BITS);
+        if (val == divider) {
+            draw_bits(x, y, offset, width, curr_value, count);
+            curr_value = 1 - curr_value;
+            offset += count;
+            count = 0;
+        } else {
+            count = count * divider + val;
+        }
+    }
+    draw_bits(x, y, offset, width, curr_value, count);
 }
 
 void renderBits(const uint8_t *input, int bits_count)
@@ -198,6 +198,18 @@ void renderBits(const uint8_t *input, int bits_count)
                         Paint_SetPixel(x + j, y + i, color ? BLACK : WHITE);
                     }
                 }
+                break;
+            }
+            case RLE_IMAGE_CMD: {
+                int x = br.read(X_BITS);
+                int y = br.read(Y_BITS);
+                int width = br.read(X_BITS);
+                int height = br.read(Y_BITS);
+                if (x < 0 || y < 0 || width < 0 || height < 0) {
+                    return;
+                }
+                debug("Render RLE image x=%d y=%d width=%d height=%d\n", x, y, width, height);
+                rle_img_render(&br, x, y, width, height);
                 break;
             }
             case ICON_CMD: {
