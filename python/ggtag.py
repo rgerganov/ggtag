@@ -55,6 +55,13 @@ class GGTag(object):
         image = base64.b64encode(bitmap).decode("utf-8")
         self._text_cmd += "\\i{},{},{},{},{}".format(x, y, width, height, image)
 
+    def image_png(self, x, y, width, height, png_image, dither=False):
+        """Draw PNG image at position (x, y) with the given width and height.
+        """
+        self._check_xy(x, y)
+        b64png = base64.b64encode(png_image).decode("utf-8")
+        self._text_cmd += "\\P{},{},{},{},{},{}".format(x, y, width, height, int(dither), b64png)
+
     def image_url(self, x, y, width, height, dither, url):
         """Place the image from the given URL at position (x, y) with the given
         width and height."""
@@ -90,6 +97,8 @@ class GGTag(object):
     def browse(self, host='https://ggtag.io'):
         """Open the tag in a web browser."""
         url = "{}/?i={}".format(host, urllib.parse.quote(self._text_cmd, safe=''))
+        if len(url) > 8200:
+            print("Warning: URL is too long")
         webbrowser.open(url)
 
     def __bytes__(self):
