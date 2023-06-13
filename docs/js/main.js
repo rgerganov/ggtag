@@ -8,7 +8,7 @@ const ESC2CMD = {"\\t": "Text",
                  "\\l": "Line",
                  "\\q": "QR code",
                  "\\I": "Image",
-                 "\\i": "B64Image",
+                 "\\P": "PNGImage",
                  "\\a": "Icon",
                  "\\f": "RFID"}
 
@@ -20,7 +20,7 @@ const CMD2ESC = {"Text":       "\\t",
                  "Line":       "\\l",
                  "QR code":    "\\q",
                  "Image":      "\\I",
-                 "B64Image":   "\\i",
+                 "PNGImage":   "\\P",
                  "Icon":       "\\a",
                  "RFID":       "\\f"}
 
@@ -94,7 +94,7 @@ function getInput() {
 
 async function repaint() {
     let inp = getInput();
-    inp = await preprocessImages(inp);
+    inp = await processImages(inp);
     let data = encodeInput(inp);
     if (data.length > 256) {
         let duration = Math.ceil(data.length / 33);
@@ -471,11 +471,11 @@ async function programSound(input)
     console.log("All done");
 }
 
-function bitmapToBase64(bitmap)
+function arrToBase64(arr)
 {
     var base64 = "";
-    for (var i = 0; i < bitmap.length; i++) {
-        base64 += String.fromCharCode(bitmap[i]);
+    for (var i = 0; i < arr.length; i++) {
+        base64 += String.fromCharCode(arr[i]);
     }
     return btoa(base64);
 }
@@ -488,9 +488,77 @@ const loadImage = (url) => new Promise((resolve, reject) => {
     img.src = url;
 });
 
-async function preprocessImages(input)
+async function loadPNGImage(base64png)
 {
-    const canvas = document.getElementById("ggCanvas");
+    let promiseResolve;
+    const promise = new Promise(resolve => {
+        promiseResolve = resolve;
+    });    
+    let img = new Image();
+    img.onload = function() {
+        promiseResolve();
+    };
+    img.src = "data:image/png;base64," + base64png;
+    await promise;
+    return img;
+}
+
+function imgToBase64Bitmap(img, w, h, dither) {
+    let tempCanvas = new OffscreenCanvas(w, h);
+    let tempCtx = tempCanvas.getContext("2d");
+    tempCtx.drawImage(img, 0, 0, w, h);
+    let imgData = tempCtx.getImageData(0, 0, w, h);
+    let rgbaArr = imgData.data;
+    let rgbaBuf = Module._malloc(rgbaArr.length*rgbaArr.BYTES_PER_ELEMENT);
+    if (rgbaBuf == 0) {
+        console.log("Failed to allocate memory for image");
+        return null;
+    }
+    Module.HEAPU8.set(rgbaArr, rgbaBuf);
+    // get monochrome bitmap from RGBA image
+    let bmpPtr = Module.ccall('monoimage', 'number', ['number', 'number', 'number','number'], [rgbaBuf, imgData.width, imgData.height, dither]);
+    if (bmpPtr == 0) {
+        console.log("monoimage failed");
+        Module._free(rgbaBuf);
+        return null;
+    }
+    Module._free(rgbaBuf);
+    let bmpLength = Math.ceil(w * h / 8);
+    let bmp = new Uint8Array(Module.HEAP8.buffer, bmpPtr, bmpLength);
+    let base64bmp = arrToBase64(bmp);
+    Module._free(bmpPtr);
+    return base64bmp;
+}
+
+async function processPNGImages(input) {
+    // find all image escape sequences "\P<x>,<y>,<w>,<h>,<dither>,<base64png>"
+    while (true) {
+        let regex = /\\P(\d+),(\d+),(\d+),(\d+),(\d),([^\\]+)/g;
+        let match = null;
+        if ((match = regex.exec(input)) !== null) {
+            let x = match[1];
+            let y = match[2];
+            let w = match[3];
+            let h = match[4];
+            let dither = match[5];
+            let img = await loadPNGImage(match[6]);
+            if (w == 0) {
+                w = img.width;
+            }
+            if (h == 0) {
+                h = img.height;
+            }
+            let base64bmp = imgToBase64Bitmap(img, w, h, dither);
+            // replace with "\i<x>,<y>,<width>,<height>,<base64_encoded_bitmap>"
+            input = input.replace(match[0], `\\i${x},${y},${w},${h},${base64bmp}`);
+        } else {
+            break;
+        }
+    }
+    return input;
+}
+
+async function processImageURLs(input) {
     // find all image escape sequences "\I<x>,<y>,<w>,<h>,<dither>,<url>"
     let regex = /\\I(\d+),(\d+),(\d+),(\d+),(\d),([^\\]+)/g;
     let match = null;
@@ -512,32 +580,49 @@ async function preprocessImages(input)
         if (h == 0) {
             h = img.height;
         }
-        let tempCanvas = new OffscreenCanvas(w, h);
-        let tempCtx = tempCanvas.getContext("2d");
-        tempCtx.drawImage(img, 0, 0, w, h);
-        let imgData = tempCtx.getImageData(0, 0, w, h);
-        let rgbaArr = imgData.data;
-        let rgbaBuf = Module._malloc(rgbaArr.length*rgbaArr.BYTES_PER_ELEMENT);
-        if (rgbaBuf == 0) {
-            console.log("Failed to allocate memory for image: " + match[6]);
-            continue;
-        }
-        Module.HEAPU8.set(rgbaArr, rgbaBuf);
-        // get monochrome bitmap from RGBA image
-        let ditheredPtr = Module.ccall('monoimage', 'number', ['number', 'number', 'number','number'], [rgbaBuf, imgData.width, imgData.height, dither]);
-        if (ditheredPtr == 0) {
-            console.log("monoimage failed: " + match[6]);
-            Module._free(rgbaBuf);
-            continue;
-        }
-        Module._free(rgbaBuf);
-        let ditheredLength = Math.ceil(canvas.width * canvas.height / 8);
-        let ditheredBitmap = new Uint8Array(Module.HEAP8.buffer, ditheredPtr, ditheredLength);
-        let base64 = bitmapToBase64(ditheredBitmap);
-        Module._free(ditheredPtr);
+        let base64bmp = imgToBase64Bitmap(img, w, h, dither);
         // replace with "\i<x>,<y>,<width>,<height>,<base64_encoded_bitmap>"
-        input = input.replace(match[0], `\\i${x},${y},${w},${h},${base64}`);
+        input = input.replace(match[0], `\\i${x},${y},${w},${h},${base64bmp}`);
     }
-    //console.log(input);
     return input;
+}
+
+async function processImages(input) {
+    input = await processPNGImages(input);
+    input = await processImageURLs(input);
+    return input;
+}
+
+function dropHandler(e) {
+    e.preventDefault();
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        for (let i = 0; i < files.length; i++) {
+            if (files[i].type === "image/png") {
+                // read the file contents
+                let reader = new FileReader();
+                reader.onload = async function(e) {
+                    let data = new Uint8Array(e.target.result);
+                    let b64png = arrToBase64(data);
+                    let lastCmd = $('#cmdContainer').children().last();
+                    let newCmd = $(lastCmd).clone()
+                    newCmd.find(".dropdown-item").click(onCmdChange);
+                    newCmd.find(".fa-plus").parent().click(onAdd);
+                    newCmd.find(".fa-trash").parent().click(onDelete);
+                    newCmd.find("input[type=text]").keypress(onKeypress);
+                    newCmd.find("input[type=text]").focusout(repaint);
+                    newCmd.find("button").text("PNGImage");
+                    newCmd.find("input[type=text]").val(`0,0,0,0,0,${b64png}`);
+                    newCmd.insertAfter($(lastCmd));
+                    repaint();
+                }
+                reader.readAsArrayBuffer(files[i]);
+            }
+        }
+    }
+}
+
+function dragOverHandler(ev) {
+    // Prevent default behavior (Prevent file from being opened)
+    ev.preventDefault();
 }

@@ -43,7 +43,7 @@
         </script>
     </head>
 <body>
-<div class="container">
+<div class="container" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);">
   <div id="errDiv" style="display: none;" class="alert alert-danger">
     <span id="errMsg">Placeholder for error messages</span>
   </div>
@@ -136,6 +136,7 @@
         <b>Icon:</b> <tt>X,Y,height,<a href="https://fontawesome.com/v5/cheatsheet/free/solid" target="_blank">name</a></tt><br>
         <b>RFID:</b> <tt>em,mfc_id_hex,uid_hex</tt><br><br>
         You can change the initial (X,Y) coordinates of selected objects by dragging on the canvas.<br>
+        Local PNG files can be added with drag and drop.<br>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -149,7 +150,7 @@
 let programButton = document.getElementById('program');
 programButton.addEventListener('click', async () => {
     let inp = getInput();
-    inp = await preprocessImages(inp);
+    inp = await processImages(inp);
     let iface = document.querySelector('input[name="iface"]:checked').value;
     try {
         programButton.disabled = true;
@@ -205,7 +206,6 @@ document.body.addEventListener("touchmove", function (e) {
 $("#ggCanvas").bind("mousedown touchstart", onMouseDown);
 $("#ggCanvas").bind("mouseup touchend", onMouseUp);
 $("#ggCanvas").bind("mousemove touchmove", onMouseMove);
-
 
 Module['onRuntimeInitialized'] = onRuntimeInitialized;
 </script>
