@@ -2,8 +2,8 @@
 # Overview
 
 `ggtag` is an electronic tag that can be programmed with sound using the [ggwave](https://github.com/ggerganov/ggwave) library.
-It is powered by the RP2040 microcontroller and uses Waveshare compatible e-paper display.
-Additionally, ggtag supports USB serial programming and allows emulation of 125kHz RFID tags.
+It is based on the RP2040 microcontroller and has 3.52" e-paper display.
+Additionally, ggtag supports USB serial programming and allows emulation of 125kHz RFID tags (ASK and FSK).
 
 <table>
   <tr>
@@ -15,6 +15,12 @@ Additionally, ggtag supports USB serial programming and allows emulation of 125k
     </td>
   </tr>
 </table>
+
+Some example tags:
+ * [demo](https://ggtag.io/?i=%5Cr18%2C15%2C82%2C82%5Cq22%2C19%2C3%2Chttps%3A%2F%2Fggtag.io%5CI273%2C15%2C70%2C70%2C0%2Chttps%3A%2F%2Fggtag.io%2Fggtag-180x180.png%5Ct139%2C118%2C5%2Cggtag%5Ct58%2C149%2C3%2Cprogrammable%20e-paper%20tag%5Ca58%2C200%2C20%2Clink%5Ct86%2C203%2C4%2Chttps%3A%2F%2Fggtag.io)
+ * [octocat](https://ggtag.io/?i=%5Cr10%2C25%2C110%2C110%5CI15%2C30%2C100%2C100%2C0%2Chttps%3A%2F%2Favatars.githubusercontent.com%2Fu%2F583231%5Ct140%2C50%2C5%2CThe%20Octocat%5Ct140%2C80%2C2%2Cgithub.com%2Foctocat%5Ca13%2C156%2C16%2Cmap-marker-alt%5Ct33%2C158%2C2%2CSan%20Francisco%5Ca13%2C183%2C16%2Cbuilding%5Ct33%2C185%2C2%2C%40github%5Ca180%2C154%2C16%2Clink%5Ct202%2C158%2C2%2Chttps%3A%2F%2Fgithub.blog%5Ca180%2C185%2C16%2Cenvelope%5Ct202%2C185%2C2%2Coctocat%40github.com)
+ * [mario](https://ggtag.io/?i=%5CI17%2C19%2C0%2C0%2C0%2Chttps%3A%2F%2Fggtag.io%2Fmario.png%5Ct144%2C42%2C5%2CSUPER%20MARIO%5Ct146%2C75%2C4%2Cplumber%5Ca30%2C165%2C23%2Cphone-alt%5Ct68%2C168%2C3%2C08812345%5Ca30%2C208%2C23%2Cenvelope%5Ct68%2C210%2C3%2Cm%40ggtag.io%5Ca215%2C165%2C23%2Cglobe%5Ct248%2C167%2C3%2Cggtag.io%5Ca217%2C203%2C23%2Cmap-marker-alt%5Ct248%2C208%2C3%2CSofia)
+ * [wifi](https://ggtag.io/?i=%5Ca20%2C20%2C75%2Cwifi%5Cq254%2C16%2C3%2CWIFI%3AS%3AWelcome%20To%20Hell%3BT%3AWPA%3BP%3A12345678%3B%3B%5Ct1%2C159%2C5%2CSSID%3A%20Welcome%20To%20Hell%5Ct1%2C189%2C5%2C%20PWD%3A%2012345678)
 
 Both firmware and hardware are open source and licensed under the GPLv3 license.
 The PCB is made by [Eurolan](http://www.eurolan.net/), you can find more details about the hardware design in the [hardware](/hardware) directory.
@@ -41,7 +47,7 @@ https://user-images.githubusercontent.com/271616/233822572-c4ee6f94-ced6-48ab-8f
 
 ## Emulating RFID tags
 
-You can emulate 125kHz EM4102 RFID tags with ggtag. This is accomplished with an ATtiny85 MCU and the [avrfid](https://github.com/scanlime/navi-misc/blob/master/avrfid/avrfid.S) firmware. When ggtag receives an RFID command, it generates the corresponding avrfid firmware and programs the ATtiny85 with it. Currently, the avrfid firmware works only in passive mode, so you have to switch off the battery (flip the switch to `USB`) before using ggtag as RFID tag. Demo:
+You can emulate 125kHz RFID tags with ggtag. This is accomplished with an ATtiny85 MCU and the [avrfid](https://github.com/scanlime/navi-misc/blob/master/avrfid/avrfid.S) firmware. When ggtag receives an RFID command, it generates the corresponding avrfid firmware and programs the ATtiny85 with it. Demo:
 
 https://user-images.githubusercontent.com/271616/233822577-56f58177-3848-44f0-9bb0-32217d96b5e4.mp4
 
@@ -51,7 +57,7 @@ There is a `ggtag` python package which can be used together with `pyserial` or 
 
 # Known issues
 
- * The RFID function works only when `ggtag` is in close proximity with the RFID reader. You may also need to hold it for several seconds for read to be successful.
+ * With some RFID readers you need to keep `ggtag` at 1cm distance for read to be successful.
 
 # Credits
 
@@ -117,4 +123,5 @@ There is a hosted version available at [https://ggtag.io](https://ggtag.io)
 ## Flashing the firmware
 
 Put ggtag into USB mode, press and hold the button and plug the USB cable.
-Copy `build/ggtag-3in52-rse.uf2` to the `RPI-RP2` drive. The tag will reboot and run the new firmware.
+Download the latest firmware [release](https://github.com/rgerganov/ggtag/releases) and copy the `.uf2` file to the `RPI-RP2` drive.
+The tag will reboot and run the new firmware.
