@@ -43,13 +43,17 @@ https://user-images.githubusercontent.com/271616/233822561-fff766fd-9242-4774-a4
 
 The web interface is using [Web Serial API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Serial_API) for USB serial programming, so you need a web browser (e.g. Chrome, Edge) which supports this API. Mobile Chrome running on Android is also supported. Here is a demo of using Pixel5 phone for USB serial programming:
 
-https://user-images.githubusercontent.com/271616/233822572-c4ee6f94-ced6-48ab-8f59-7cc725db4bb0.mp4
+https://github.com/rgerganov/ggtag/assets/271616/d471cdec-4e41-4382-ae9f-f745ea71745e
 
 ## Emulating RFID tags
 
-You can emulate 125kHz RFID tags with ggtag. This is accomplished with an ATtiny85 MCU and the [avrfid](https://github.com/scanlime/navi-misc/blob/master/avrfid/avrfid.S) firmware. When ggtag receives an RFID command, it generates the corresponding avrfid firmware and programs the ATtiny85 with it. Demo:
+You can emulate 125kHz RFID tags with ggtag. This is accomplished with an ATtiny85 MCU and the [avrfid](https://github.com/scanlime/navi-misc/blob/master/avrfid/avrfid.S) firmware. When ggtag receives an RFID command, it generates the corresponding avrfid firmware and programs the ATtiny85 with it. Demo with Flipper Zero:
 
-https://user-images.githubusercontent.com/271616/233822577-56f58177-3848-44f0-9bb0-32217d96b5e4.mp4
+https://github.com/rgerganov/ggtag/assets/271616/654c1e1a-a8cb-4189-a39e-80669b1f9637
+
+Another demo with USB RFID reader:
+
+https://github.com/rgerganov/ggtag/assets/271616/f1d7bd59-880e-44ea-8732-c919e1119cd3
 
 ## Python examples
 
