@@ -5,6 +5,8 @@
 It is based on the RP2040 microcontroller and has 3.52" e-paper display.
 Additionally, ggtag supports USB serial programming and allows emulation of 125kHz RFID tags (ASK and FSK).
 
+__Subscribe to our [CrowdSupply page](https://www.crowdsupply.com/eurolan-ltd/ggtag) to get latest updates about the project__
+
 <table>
   <tr>
     <td>
