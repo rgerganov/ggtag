@@ -949,6 +949,29 @@ uint8_t* render(const char *input, int width, int height)
     return bitmap;
 }
 
+// Allocates a bitmap with dimensions [ceil(width/8), height] and renders the tag produced by the specified bit buffer.
+// Caller is responsible for freeing the bitmap.
+uint8_t* renderBuffer(const uint8_t *buf, int bits_count, int width, int height)
+{
+    if (!buf || bits_count <= 0 || width <= 0 || height <= 0) {
+        return 0;
+    }
+    int w = width / 8;
+    if (width % 8 != 0) {
+        w += 1;
+    }
+    int total = w * height;
+    uint8_t *bitmap = (uint8_t*) malloc(total);
+    if (!bitmap) {
+        return 0;
+    }
+    memset(bitmap, 0, total);
+    Paint_NewImage(bitmap, width, height, 0, WHITE);
+    Paint_Clear(WHITE);
+    renderBits(buf, bits_count);
+    return bitmap;
+}
+
 static void rl_number(BitBuffer *buf, int num)
 {
     int divider = (1 << RLE_BITS) - 1;

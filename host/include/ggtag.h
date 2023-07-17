@@ -18,6 +18,10 @@ char* getLastError();
 // Caller is responsible for freeing the bitmap.
 uint8_t* render(const char *input, int width, int height);
 
+// Allocates a bitmap with dimensions [ceil(width/8), height] and renders the tag produced by the specified bit buffer.
+// Caller is responsible for freeing the bitmap.
+uint8_t* renderBuffer(const uint8_t *buf, int bits_count, int width, int height);
+
 // Converts the specified RGBA image to a monochrome bitmap.
 // Allocates a bitmap with size ceil(width * height / 8) and renders the image into it.
 // If dither is true, the image is dithered using the Floyd-Steinberg algorithm.

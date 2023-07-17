@@ -1506,6 +1506,9 @@ var _getLastError = Module["_getLastError"] = createExportWrapper("getLastError"
 var _render = Module["_render"] = createExportWrapper("render");
 
 /** @type {function(...*):?} */
+var _renderBuffer = Module["_renderBuffer"] = createExportWrapper("renderBuffer");
+
+/** @type {function(...*):?} */
 var _monoimage = Module["_monoimage"] = createExportWrapper("monoimage");
 
 /** @type {function(...*):?} */
