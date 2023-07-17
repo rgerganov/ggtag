@@ -506,7 +506,10 @@ async function loadPNGImage(base64png)
 }
 
 function imgToBase64Bitmap(img, w, h, dither) {
-    let tempCanvas = new OffscreenCanvas(w, h);
+    const canvas = document.getElementById("ggCanvas");
+    let tempCanvas = document.createElement('canvas');
+    tempCanvas.width = canvas.width;
+    tempCanvas.height = canvas.height;
     let tempCtx = tempCanvas.getContext("2d");
     tempCtx.drawImage(img, 0, 0, w, h);
     let imgData = tempCtx.getImageData(0, 0, w, h);
