@@ -10,10 +10,10 @@ __Subscribe to our [CrowdSupply page](https://www.crowdsupply.com/eurolan-ltd/gg
 <table>
   <tr>
     <td>
-      <img src="/pics/front.jpg"></img>
+      <img src="https://github.com/rgerganov/ggtag/assets/271616/f1cfaeb3-3cd3-4a6a-91b8-00ee64586646"><img>
     </td>
     <td>
-      <img src="/pics/back.jpg"></img>
+      <img src="https://github.com/rgerganov/ggtag/assets/271616/3d7d9585-6011-4011-8473-a00e232abf33"></img>
     </td>
   </tr>
 </table>
@@ -63,6 +63,7 @@ There is a `ggtag` python package which can be used together with `pyserial` or 
 
 # Known issues
 
+ * If you switch off the battery after successful sound programming, you need to make ~5sec pause before switching it on again.
  * With some RFID readers you need to keep `ggtag` at 1cm distance for read to be successful.
 
 # Credits
@@ -131,3 +132,7 @@ There is a hosted version available at [https://ggtag.io](https://ggtag.io)
 Put ggtag into USB mode, press and hold the button and plug the USB cable.
 Download the latest firmware [release](https://github.com/rgerganov/ggtag/releases) and copy the `.uf2` file to the `RPI-RP2` drive.
 The tag will reboot and run the new firmware.
+
+# Feedback
+
+We'd love to hear your feedback, comments and questions about ggtag in the [Project Discussions](https://github.com/rgerganov/ggtag/discussions)
