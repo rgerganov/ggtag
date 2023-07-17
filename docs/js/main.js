@@ -595,6 +595,20 @@ async function processImages(input) {
     return input;
 }
 
+function getScaledWidthHeight(width, height, maxWidth, maxHeight) {
+    let newWidth = width;
+    let newHeight = height;
+    if (width > maxWidth) {
+        newWidth = maxWidth;
+        newHeight = Math.round(height * maxWidth / width);
+    }
+    if (newHeight > maxHeight) {
+        newHeight = maxHeight;
+        newWidth = Math.round(newWidth * maxHeight / newHeight);
+    }
+    return [newWidth, newHeight];
+}
+
 function dropHandler(e) {
     e.preventDefault();
     const files = e.dataTransfer.files;
@@ -604,8 +618,11 @@ function dropHandler(e) {
                 // read the file contents
                 let reader = new FileReader();
                 reader.onload = async function(e) {
+                    const canvas = document.getElementById("ggCanvas");
                     let data = new Uint8Array(e.target.result);
                     let b64png = arrToBase64(data);
+                    let img = await loadPNGImage(b64png);
+                    let [width, height] = getScaledWidthHeight(img.width, img.height, canvas.width, canvas.height);
                     let lastCmd = $('#cmdContainer').children().last();
                     let newCmd = $(lastCmd).clone()
                     newCmd.find(".dropdown-item").click(onCmdChange);
@@ -614,7 +631,7 @@ function dropHandler(e) {
                     newCmd.find("input[type=text]").keypress(onKeypress);
                     newCmd.find("input[type=text]").focusout(repaint);
                     newCmd.find("button").text("PNGImage");
-                    newCmd.find("input[type=text]").val(`0,0,0,0,0,${b64png}`);
+                    newCmd.find("input[type=text]").val(`0,0,${width},${height},1,${b64png}`);
                     newCmd.insertAfter($(lastCmd));
                     repaint();
                 }
