@@ -57,6 +57,13 @@ Another demo with USB RFID reader:
 
 https://github.com/rgerganov/ggtag/assets/271616/f1d7bd59-880e-44ea-8732-c919e1119cd3
 
+## Web receiver
+
+There is a web audio receiver which implements the [ggtag protocol](https://github.com/rgerganov/ggtag/blob/master/protocol.md) running at [https://ggtag.io/recv/](https://ggtag.io/recv/).
+This could be useful if you want to hack on the protocol and debug stuff directly in the browser.
+
+https://github.com/rgerganov/ggtag/assets/271616/a54e0393-90e2-4561-994b-85e5b82250ba
+
 ## Python examples
 
 There is a `ggtag` python package which can be used together with `pyserial` or `ggwave` to program the device. See the [examples](examples/) folder for more details.
