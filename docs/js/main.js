@@ -98,7 +98,7 @@ async function repaint() {
     let inp = getInput();
     inp = await processImages(inp);
     let data = encodeInput(inp);
-    if (data.length > 256) {
+    if (data != null && data.length > 256) {
         let duration = Math.ceil(data.length / 33);
         $('#soundLabel').text('Sound (~' + duration + ' sec.)');
     } else {
