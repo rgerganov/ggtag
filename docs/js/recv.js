@@ -5,6 +5,7 @@ ggwave_factory().then(function(obj) {
 let audioContext = null;
 let ggwaveInstance = null;
 let recorder = null;
+let lastPacket = new Uint8Array(0);
 
 // helper function
 function convertTypedArray(src, type) {
@@ -82,6 +83,7 @@ function updateProgress(bytesReceived, totalBytes) {
 }
 
 function onStartListen() {
+    updateProgress(0, 1);
     if (audioContext == null) {
         let AudioContext = window.AudioContext // Default
            || window.webkitAudioContext // Safari and old versions of Chrome
@@ -126,7 +128,6 @@ function onStartListen() {
                     numberOfOutputChannels);
         }
         let recvBuffer = new Uint8Array(0);
-        let lastPacket = new Uint8Array(0);
         let expectedBytesCount = 0;
         recorder.onaudioprocess = function (e) {
             let source = e.inputBuffer;
@@ -158,8 +159,11 @@ function onStartListen() {
                 updateProgress(recvBuffer.length, expectedBytesCount);
                 if (recvBuffer.length >= expectedBytesCount) {
                     render(recvBuffer);
-                    recvBuffer = new Uint8Array(0);
-                    expectedBytesCount = 0;
+                    recorder.disconnect(audioContext.destination);
+                    mediaStream.disconnect(recorder);
+                    recorder = null;
+                    startListenButton.hidden = false;
+                    stopListenButton.hidden = true;
                 }
             }
         }
