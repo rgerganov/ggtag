@@ -1,9 +1,11 @@
 [![Build Status](https://github.com/rgerganov/ggtag/workflows/CI/badge.svg)](https://github.com/rgerganov/ggtag/actions)
 # Overview
 
-`ggtag` is an electronic tag that can be programmed with sound using the [ggwave](https://github.com/ggerganov/ggwave) library.
+`ggtag` is an e-paper tag that can be programmed with sound using the [ggwave](https://github.com/ggerganov/ggwave) library.
 It is based on the RP2040 microcontroller and has 3.52" e-paper display.
 Additionally, ggtag supports USB serial programming and allows emulation of 125kHz RFID tags (ASK and FSK).
+
+[![CrowdSupply](https://www.crowdsupply.com/_marvin/images/crowd-supply-logo-dark.png)](https://www.crowdsupply.com/eurolan-ltd/ggtag) 
 
 __Subscribe to our [CrowdSupply page](https://www.crowdsupply.com/eurolan-ltd/ggtag) to get latest updates about the project__
 
@@ -72,6 +74,7 @@ There is a `ggtag` python package which can be used together with `pyserial` or 
 
  * If you switch off the battery after successful sound programming, you need to make ~5sec pause before switching it on again.
  * With some RFID readers you need to keep `ggtag` at 1cm distance for read to be successful.
+ * If you want to display non-ASCII text, you need to convert it to image first.
 
 # Credits
 
