@@ -7,7 +7,7 @@ Additionally, ggtag supports USB serial programming and allows emulation of 125k
 
 [![CrowdSupply](https://www.crowdsupply.com/_marvin/images/crowd-supply-logo-dark.png)](https://www.crowdsupply.com/eurolan-ltd/ggtag) 
 
-__Subscribe to our [CrowdSupply page](https://www.crowdsupply.com/eurolan-ltd/ggtag) to get latest updates about the project__
+__The GGtag's CrowdSupply campaign has started, you can order one [here](https://www.crowdsupply.com/eurolan-ltd/ggtag)!__
 
 <table>
   <tr>
@@ -24,7 +24,7 @@ Some example tags:
  * [demo](https://ggtag.io/?i=%5Cr18%2C15%2C82%2C82%5Cq22%2C19%2C3%2Chttps%3A%2F%2Fggtag.io%5CI273%2C15%2C70%2C70%2C0%2Chttps%3A%2F%2Fggtag.io%2Fggtag-180x180.png%5Ct139%2C118%2C5%2Cggtag%5Ct58%2C149%2C3%2Cprogrammable%20e-paper%20tag%5Ca58%2C200%2C20%2Clink%5Ct86%2C203%2C4%2Chttps%3A%2F%2Fggtag.io)
  * [octocat](https://ggtag.io/?i=%5Cr10%2C25%2C110%2C110%5CI15%2C30%2C100%2C100%2C0%2Chttps%3A%2F%2Favatars.githubusercontent.com%2Fu%2F583231%5Ct140%2C50%2C5%2CThe%20Octocat%5Ct140%2C80%2C2%2Cgithub.com%2Foctocat%5Ca13%2C156%2C16%2Cmap-marker-alt%5Ct33%2C158%2C2%2CSan%20Francisco%5Ca13%2C183%2C16%2Cbuilding%5Ct33%2C185%2C2%2C%40github%5Ca180%2C154%2C16%2Clink%5Ct202%2C158%2C2%2Chttps%3A%2F%2Fgithub.blog%5Ca180%2C185%2C16%2Cenvelope%5Ct202%2C185%2C2%2Coctocat%40github.com)
  * [mario](https://ggtag.io/?i=%5CI17%2C19%2C0%2C0%2C0%2Chttps%3A%2F%2Fggtag.io%2Fmario.png%5Ct144%2C42%2C5%2CSUPER%20MARIO%5Ct146%2C75%2C4%2Cplumber%5Ca30%2C165%2C23%2Cphone-alt%5Ct68%2C168%2C3%2C08812345%5Ca30%2C208%2C23%2Cenvelope%5Ct68%2C210%2C3%2Cm%40ggtag.io%5Ca215%2C165%2C23%2Cglobe%5Ct248%2C167%2C3%2Cggtag.io%5Ca217%2C203%2C23%2Cmap-marker-alt%5Ct248%2C208%2C3%2CSofia)
- * [wifi](https://ggtag.io/?i=%5Ca20%2C20%2C75%2Cwifi%5Cq254%2C16%2C3%2CWIFI%3AS%3AWelcome%20To%20Hell%3BT%3AWPA%3BP%3A12345678%3B%3B%5Ct1%2C159%2C5%2CSSID%3A%20Welcome%20To%20Hell%5Ct1%2C189%2C5%2C%20PWD%3A%2012345678)
+ * [wifi](https://ggtag.io/?i=%5Ca40%2C35%2C75%2Cwifi%5Cq215%2C30%2C3%2CWIFI%3AS%3AHotel%20WiFi%3BT%3AWPA%3BP%3A12345678%3B%3B%5Ct40%2C155%2C5%2CSSID%3A%20Hotel%20WiFi%5Ct40%2C185%2C5%2C%20PWD%3A%2012345678)
 
 Both firmware and hardware are open source and licensed under the GPLv3 license.
 The PCB is made by [Eurolan](http://www.eurolan.net/), you can find more details about the hardware design in the [hardware](/hardware) directory.
