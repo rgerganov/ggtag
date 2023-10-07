@@ -406,6 +406,57 @@ void Paint_DrawRectangle(UWORD Xstart, UWORD Ystart, UWORD Xend, UWORD Yend,
     }
 }
 
+void Paint_DrawEllipse(UWORD X_Center, UWORD Y_Center, UWORD Radius_x, UWORD Radius_y, UWORD Color, DOT_PIXEL Line_width, DRAW_FILL Draw_Fill)
+{
+    if (X_Center >= Paint.Width || Y_Center >= Paint.Height) {
+        debug("Input exceeds the normal display range\r\n");
+        return;
+    }
+    // draw ellipse using the midpoint ellipse algorithm
+    int x = 0, y = Radius_y;
+    int rx = Radius_x, ry = Radius_y;
+    int p = ry * ry - rx * rx * ry + rx * rx / 4;
+    int dx = 2 * ry * ry * x;
+    int dy = 2 * rx * rx * y;
+    // region 1
+    while (dx < dy) {
+        Paint_DrawPoint(X_Center + x, Y_Center + y, Color, Line_width, DOT_STYLE_DFT);
+        Paint_DrawPoint(X_Center - x, Y_Center + y, Color, Line_width, DOT_STYLE_DFT);
+        Paint_DrawPoint(X_Center + x, Y_Center - y, Color, Line_width, DOT_STYLE_DFT);
+        Paint_DrawPoint(X_Center - x, Y_Center - y, Color, Line_width, DOT_STYLE_DFT);
+        if (p < 0) {
+            x++;
+            dx = dx + 2 * ry * ry;
+            p = p + dx + ry * ry;
+        } else {
+            x++;
+            y--;
+            dx = dx + 2 * ry * ry;
+            dy = dy - 2 * rx * rx;
+            p = p + dx - dy + ry * ry;
+        }
+    }
+    // region 2
+    p = ry * ry * (x + 1 / 2) * (x + 1 / 2) + rx * rx * (y - 1) * (y - 1) - rx * rx * ry * ry;
+    while (y >= 0) {
+        Paint_DrawPoint(X_Center + x, Y_Center + y, Color, Line_width, DOT_STYLE_DFT);
+        Paint_DrawPoint(X_Center - x, Y_Center + y, Color, Line_width, DOT_STYLE_DFT);
+        Paint_DrawPoint(X_Center + x, Y_Center - y, Color, Line_width, DOT_STYLE_DFT);
+        Paint_DrawPoint(X_Center - x, Y_Center - y, Color, Line_width, DOT_STYLE_DFT);
+        if (p > 0) {
+            y--;
+            dy = dy - 2 * rx * rx;
+            p = p + rx * rx - dy;
+        } else {
+            y--;
+            x++;
+            dx = dx + 2 * ry * ry;
+            dy = dy - 2 * rx * rx;
+            p = p + dx - dy + rx * rx;
+        }
+    }
+}
+
 /******************************************************************************
 function: Use the 8-point method to draw a circle of the
             specified size at the specified position->

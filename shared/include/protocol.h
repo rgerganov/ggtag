@@ -56,8 +56,10 @@ struct BitReader {
 #define RFID_CMD        9
 // draw image (run length encoded)
 #define RLE_IMAGE_CMD   10
+// draw ellipse
+#define ELLIPSE_CMD     11
 
-#define EOF_CMD         11
+#define EOF_CMD         12
 
 // bits for command
 #define CMD_BITS       4

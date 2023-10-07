@@ -29,6 +29,13 @@ struct CircleCmd {
     int r;
 };
 
+struct EllipseCmd {
+    int x;
+    int y;
+    int rx;
+    int ry;
+};
+
 struct LineCmd {
     int x1;
     int y1;
@@ -327,6 +334,25 @@ struct BitBuffer {
         }
         return true;
     }
+    bool addCmd(const EllipseCmd &cmd)
+    {
+        if (!addValue(ELLIPSE_CMD, CMD_BITS)) {
+            return false;
+        }
+        if (!addValue(cmd.x, X_BITS)) {
+            return false;
+        }
+        if (!addValue(cmd.y, Y_BITS)) {
+            return false;
+        }
+        if (!addValue(cmd.rx, R_BITS)) {
+            return false;
+        }
+        if (!addValue(cmd.ry, R_BITS)) {
+            return false;
+        }
+        return true;
+    }
     bool addCmd(const LineCmd &cmd)
     {
         if (!addValue(LINE_CMD, CMD_BITS)) {
@@ -417,6 +443,9 @@ bool parseCommand(const char *input, int *cmd, int *curr_offset)
             break;
         case 'f':
             *cmd = RFID_CMD;
+            break;
+        case 'e':
+            *cmd = ELLIPSE_CMD;
             break;
         default:
             return false;
@@ -743,6 +772,38 @@ bool parseCircleCmd(const char *input, CircleCmd *cmd, int *curr_offset)
     return true;
 }
 
+// EllipseCommand: <x>,<y>,<rx>,<ry>
+bool parseEllipseCmd(const char* input, EllipseCmd *cmd, int *curr_offset)
+{
+    int offset = *curr_offset;
+    if (!input[offset]) {
+        return false;
+    }
+    if (!parseInt(input, &cmd->x, &offset)) {
+        return false;
+    }
+    if (input[offset++] != ',') {
+        return false;
+    }
+    if (!parseInt(input, &cmd->y, &offset)) {
+        return false;
+    }
+    if (input[offset++] != ',') {
+        return false;
+    }
+    if (!parseInt(input, &cmd->rx, &offset)) {
+        return false;
+    }
+    if (input[offset++] != ',') {
+        return false;
+    }
+    if (!parseInt(input, &cmd->ry, &offset)) {
+        return false;
+    }
+    *curr_offset = offset;
+    return true;
+}
+
 // LineCommand: <x1>,<y1>,<x2>,<y2>
 bool parseLineCmd(const char *input, LineCmd *cmd, int *curr_offset)
 {
@@ -823,6 +884,16 @@ bool parse(const char *input, BitBuffer *buf, int *curr_offset)
                 return false;
             }
             if (!buf->addCmd(circle_cmd, cmd == FILL_CIRCLE_CMD)) {
+                return false;
+            }
+            break;
+        case ELLIPSE_CMD:
+            EllipseCmd ellipse_cmd;
+            if (!parseEllipseCmd(input, &ellipse_cmd, &offset)) {
+                sprintf(lastError, "Failed to parse Ellipse command");
+                return false;
+            }
+            if (!buf->addCmd(ellipse_cmd)) {
                 return false;
             }
             break;

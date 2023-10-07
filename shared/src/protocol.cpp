@@ -128,6 +128,18 @@ void renderBits(const uint8_t *input, int bits_count)
                 Paint_DrawRectangle(x, y, x+w, y+h, BLACK, DOT_PIXEL_1X1, fill);
                 break;
             }
+            case ELLIPSE_CMD: {
+                int x = br.read(X_BITS);
+                int y = br.read(Y_BITS);
+                int rx = br.read(R_BITS);
+                int ry = br.read(R_BITS);
+                if (x < 0 || y < 0 || rx < 0 || ry < 0) {
+                    return;
+                }
+                debug("Render ellipse x=%d y=%d rx=%d ry=%d\n", x, y, rx, ry);
+                Paint_DrawEllipse(x, y, rx, ry, BLACK, DOT_PIXEL_1X1, DRAW_FILL_EMPTY);
+                break;
+            }
             case CIRCLE_CMD:
             case FILL_CIRCLE_CMD: {
                 int x = br.read(X_BITS);

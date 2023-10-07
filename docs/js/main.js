@@ -11,7 +11,8 @@ const ESC2CMD = {"\\t": "Text",
                  "\\P": "PNGImage",
                  "\\i": "BMPImage",
                  "\\a": "Icon",
-                 "\\f": "RFID"}
+                 "\\f": "RFID",
+                 "\\e": "Ellipse"}
 
 const CMD2ESC = {"Text":       "\\t",
                  "Rect":       "\\r",
@@ -24,7 +25,8 @@ const CMD2ESC = {"Text":       "\\t",
                  "PNGImage":   "\\P",
                  "BMPImage":   "\\i",
                  "Icon":       "\\a",
-                 "RFID":       "\\f"}
+                 "RFID":       "\\f",
+                 "Ellipse":    "\\e"}
 
 var dragging = false;
 // keeps the initial position when dragging starts
@@ -172,6 +174,9 @@ function onCmdChange() {
             remaining = randomInt(16,40) + "," + randomIcon();
         } else if (newCmd == "RFID") {
             remaining = "em,12,3456789A";
+        } else if (newCmd == "Ellipse") {
+            // random radius
+            remaining = randomInt(10, 50) + "," + randomInt(10, 50);
         }
         $(curr).find("button").text(newCmd);
         $(curr).find("input[type=text]").val(xyCoord+remaining);
