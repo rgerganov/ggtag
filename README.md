@@ -90,13 +90,17 @@ There is a `ggtag` python package which can be used together with `pyserial` or 
 # Project structure
 
 The codebase is structured in the following way:
- * `target` - contains the firmware source code for RP2040
- * `shared` - contains the shared code between the firmware and the host library
+ * `target` - contains device only source code
+ * `shared` - contains shared source code between the device and the host library
  * `host` - contains the host library
  * `docs` - contains the web interface
  * `python` - contains Python bindings for the host library
  * `examples` - contains some examples
  * `hardware` - contains hardware design files
+
+## Component diagram
+
+![component diagram](pics/diagram.png)
 
 ## Building the firmware
 
