@@ -155,9 +155,9 @@ void EPD_Init()
     EPD_SendData(0x03);         //  OPTEN VDHR[6:0]  VHDR=6.4V
                                 // T_VDS_OFF[1:0] 00=1 frame; 01=2 frame; 10=3 frame; 11=4 frame
     EPD_SendCommand(0x06);      // booster soft start   BTST
-    EPD_SendData(0x17);
-    EPD_SendData(0x37);
-    EPD_SendData(0x3D);
+    EPD_SendData(0b00010111);         //  BT_PHA[7:0]
+    EPD_SendData(0b00010111);         //  BT_PHB[7:0]
+    EPD_SendData(0b00010111);         //  x x BT_PHC[5:0]
 
     EPD_SendCommand(0x82);      // VCOM_DC setting		VDCS
     EPD_SendData(0x07);         // x  VDCS[6:0]	VCOM_DC value= -1.9v    00~3f,0x12=-1.9v
