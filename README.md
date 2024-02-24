@@ -113,7 +113,7 @@ git submodule init
 git submodule update
 cd ..
 git clone https://github.com/raspberrypi/pico-extras
-cd pico-extra
+cd pico-extras
 git submodule init
 git submodule update
 cd ..
